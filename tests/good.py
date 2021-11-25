@@ -2,10 +2,15 @@
 y = 0
 
 def test_y(y):
-    y == 0
+    return y == 0
 
 def f(x,y):
     return(x+y)
+
+def f2(x):
+    return(f(x,x))
+
+z = f2(4)
 
 def test_f(f):
     if f(2,2) == 4 and f(3,3) == 6:
@@ -19,8 +24,8 @@ def h(x):
     return x
 
 tests = { "value_tests": [
-              { "vname": "y", "test_name": "test_y" },
-              { "vname": "f", "test_name": "test_f" }
+              { "vname": "y", "test_name": "test_y", "test": test_y },
+              { "vname": "f", "test_name": "test_f", "test": test_f }
           ],
           "compare_tests":
           [
@@ -35,5 +40,6 @@ tests = { "value_tests": [
               { "fname": "h", "vector": [([-1],{}),
                                          ([0],{}),
                                          ([1],{})]}
-          ]
+          ],
+          "stdout_test": None
          }

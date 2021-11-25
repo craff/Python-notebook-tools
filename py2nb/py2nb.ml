@@ -18,7 +18,7 @@ let usage = Printf.sprintf "usage: %s files ..." Sys.argv.(0)
 
 let _ = Arg.parse spec anon_fun usage
 
-type out  = All | Corrige | Question
+type out  = All | Corrige | Question | Comment
 type cell = Markdown of string list | Code of string list | None
 
 let strip_dashes l =
@@ -118,6 +118,12 @@ let treat_file out_mode fname =
                 badPython (Printf.sprintf "line %d: bad #CORRIGE" !line_num);
               cur := Corrige
             end
+          else if starts_with ~prefix:"#COMMENT" line then
+            begin
+              if !cur != All then
+                badPython (Printf.sprintf "line %d: bad #COMMENT" !line_num);
+              cur := Comment
+            end
           else if starts_with ~prefix:"#QUESTION" line then
             begin
               if !cur != All then
@@ -134,15 +140,23 @@ let treat_file out_mode fname =
             begin
               let is_md = String.length line >= 2 && line.[0] = '#' && line.[1] = '#' in
               let line = if is_md then strip_dashes line else line in
+              let add_code line l =
+                 if !cur = All || out_mode = !cur then
+                   mode := Code (line :: l)
+                 else if !cur = Comment then
+                   if out_mode = Corrige then
+                     mode := Code (line :: l)
+                   else
+                     mode := Code (("# " ^ line) :: l)
+              in
               match (is_md, !mode) with
               | true , Markdown _ when line = "" -> ()
               | true , Markdown l -> mode := Markdown (line :: l)
-              | false, Code     l -> if !cur = All || out_mode = !cur then
-                                       mode := Code (line :: l)
+              | false, Code     l -> add_code line l
               | _    , _          -> write_cell ();
                                      if not (is_empty line) then
-                                       mode := if is_md then Markdown [line]
-                                               else Code [line]
+                                       if is_md then mode := Markdown [line]
+                                       else add_code line []
                                      else mode := None
             end
         done;

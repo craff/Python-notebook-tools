@@ -1,5 +1,9 @@
 ## Mini-projet – Tic Tac Toe
 ## =========================
+
+eleve ={ "Nom": "...",
+         "Prenom": "...",
+         "Classe": "..." }
 ##
 ## Le but de ce projet est d'écrire une version du jeu
 ## Tic Tac Toe dans laquelle deux joueurs humains
@@ -114,10 +118,12 @@ def verifier_lignes(grille):
 ## décommenter ces lignes pour tester votre function, laissez les décommentées
 ## Vous devrez peut-être les changer.
 
+#COMMENT
 assert(verifier_lignes(grille_test)           == ' ')
 assert(verifier_lignes(grille_test_ligne)     == 'X')
 assert(verifier_lignes(grille_test_colonne)   == ' ')
 assert(verifier_lignes(grille_test_diagonale) == ' ')
+#FIN
 
 ## Question 4
 ## ----------
@@ -143,10 +149,12 @@ def verifier_colonnes(grille):
 ## décommenter ces lignes pour tester votre function, laissez les décommentées
 ## Vous devrez peut-être les changer.
 
+#COMMENT
 assert(verifier_colonnes(grille_test)           == ' ')
 assert(verifier_colonnes(grille_test_ligne)     == ' ')
 assert(verifier_colonnes(grille_test_colonne)   == 'O')
 assert(verifier_colonnes(grille_test_diagonale) == ' ')
+#FIN
 
 ## Question 5
 ## ----------
@@ -173,10 +181,12 @@ def verifier_diagonales(grille):
 ## décommenter ces lignes pour tester votre function, laissez les décommentées
 ## Vous devrez peut-être les changer.
 
+#COMMENT
 assert(verifier_diagonales(grille_test)           == ' ')
 assert(verifier_diagonales(grille_test_ligne)     == ' ')
 assert(verifier_diagonales(grille_test_colonne)   == ' ')
 assert(verifier_diagonales(grille_test_diagonale) == 'X')
+#FIN
 
 ## Question 6
 ## ----------
@@ -201,10 +211,12 @@ def verifier_alignement(grille):
 ## décommenter ces lignes pour tester votre function, laissez les décommentées
 ## Vous devrez peut-être les changer.
 
+#COMMENT
 assert(verifier_alignement(grille_test)           == ' ')
 assert(verifier_alignement(grille_test_ligne)     == 'X')
 assert(verifier_alignement(grille_test_colonne)   == 'O')
 assert(verifier_alignement(grille_test_diagonale) == 'X')
+#FIN
 
 ## Question 7
 ## ----------
@@ -224,7 +236,7 @@ def joue_coup(joueur,position,grille):
     i = position//3
     j = position%3
     grille[i][j] = joueur
-    #END
+    #FIN
 
 ## n'oubliez pas de tester votre fonction.
 # print(grille_test)
@@ -250,35 +262,95 @@ nb_coups = 0
 # Variable gagnant, passe à 'X' ou 'O' dès qu'un joueur a gagné.
 gagnant = ' '
 
-while nb_coups < 9: # Mettez le bon test
+#CORRIGE
+while nb_coups < 9:
+#FIN
+#QUESTION
+while False: # Mettez le bon test
+#FIN
     # On affiche la grille
     print("la grille:")
     afficher_grille(grille)
     print("les numéros des cases")
     afficher_grille(positions)
+
     # On récupère le coup du joueur
+    #CORRIGE
     print("joueur",joueur,"entrez votre coup entre 0 et 8")
     coup = int(input())
+    #FIN
+
     # Optionnel dans un premier temps: vérifier que le coup est valide
     # et redemendez le coup sinon dans une boucle while
+    #CORRIGE
     while coup < 0 or coup > 8 or grille[coup//3][coup%3] != ' ':
         print("coup invalide, redonnez une coup:")
         coup = int(input())
+    #FIN
+
     # On joue le coup
+    #CORRIGE
     joue_coup(joueur,coup,grille)
+    #FIN
+
     # On vérifie s'il y a un gagnant et on sort de la boucle si c'est le cas
+    #CORRIGE
     gagnant=verifier_alignement(grille)
     if gagnant != ' ': break
+    #FIN
+
     # On incrémente la variable nb_coups
+    #CORRIGE
     nb_coups += 1
+    #FIN
+
     # On change de joueur
+    #CORRIGE
     joueur = 'O' if joueur == 'X' else 'X'
+    #FIN
 
 # Ici, la partie est finie. On affiche le résultat.
 # D'abord la grille...
+#CORRIGE
 afficher_grille(grille)
+#FIN
+
 # ... puis le message indiquant le vainqueur ou une partie nulle
+#CORRIGE
 if gagnant == ' ':
     print("partie nulle")
 else:
     print(joueur,"a gagné")
+#FIN
+
+#CORRIGE
+vector1 = [([grille_test], {}),
+           ([grille_test_ligne], {}),
+           ([grille_test_colonne], {}),
+           ([grille_test_diagonale], {})]
+
+tests = { "value_tests": [
+             { "vname": "grille_test_ligne",
+               "test_name": "Question 1 a",
+               "test": (lambda v: verifier_lignes(v) != ' ') },
+             { "vname": "grille_test_colonne",
+               "test_name": "Question 1 b",
+               "test": (lambda v: verifier_colonnes(v) != ' ') },
+             { "vname": "grille_test_diagonale",
+               "test_name": "Question 1 c",
+               "test": (lambda v: verifier_diagonales(v) != ' ') }
+          ],
+         "compare_tests": [
+             { "fname": "afficher_grille",
+               "vector": vector1 },
+             { "fname": "verifier_lignes",
+               "vector": vector1 },
+             { "fname": "verifier_colonnes",
+               "vector": vector1 },
+             { "fname": "verifier_diagonales",
+               "vector": vector1 },
+             { "fname": "verifier_alignement",
+               "vector": vector1 }
+          ],
+          "stdout_test": None }
+#FIN

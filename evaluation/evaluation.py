@@ -11,7 +11,7 @@ signal.signal(signal.SIGALRM, stop)
 def value_test(f1,v2,timeout=1):
     try:
         signal.alarm(timeout)
-        note = f1(v2,*args,*kargs)
+        note = f1(v2)
     except:
         note = 0
         signal.alarm(0)
@@ -21,49 +21,68 @@ def compare_test(f1,f2,vector,timeout=1):
     total = len(vector)
     good = 0
     for (args,kargs) in vector:
-        a1 = None
+        out = open("tmp.out",mode='w')
         try:
+            sys.stdout = out
             signal.alarm(timeout)
             a1 = (1,f1(*args,*kargs))
+            out.close()
+            out1 = open("tmp.out").read()
         except:
-            a1 = (0, None)
+            out.close()
+            a1 = None
+            out1 = None
         signal.alarm(0)
-        a2 = None
+        out = open("tmp.out",mode='w')
         try:
+            sys.stdout = out
             signal.alarm(timeout)
             a2 = (1,f2(*args,*kargs))
+            sys.stdout = sys.__stdout__
+            out.close()
+            out2 = open("tmp.out").read()
         except:
-            a2 = (0, None)
+            sys.stdout = sys.__stdout__
+            out.close()
+            a2 = None
+            out2 = None
         signal.alarm(0)
-        if a1 == a2: good += 1
+        if a1 == a2 and out1 == out2: good += 1
     return(good/total)
 
 def open_file(fname,stdin=None):
     f = {}
+    out = open("tmp.out",mode='w')
+    sys.stdout = out
     if stdin != None:
         sys.stdin = StringIO(stdin)
-    exec(open(fname).read(),globals(),f)
+    exec(open(fname).read(),f,f)
     sys.stdin = sys.__stdin__
-    return f
+    sys.stdout = sys.__stdout__
+    out.close()
+    out = open("tmp.out").read()
+    return (f,out)
 
 def print_header(value_tests,compare_tests,sep=","):
     print("Nom, Prenom, Classe",end="")
     for d in value_tests:
         print(",",d["test_name"],end="")
     for d in compare_tests:
-        print(",",d["fname"],end=", ")
-    print("Note")
+        print(",",d["fname"],end="")
+    print(", Note")
 
-def test_file(fprof,value_tests,compare_tests,file,stdin=None):
+def test_file(fprof,value_tests,compare_tests,stdout_test,file,stdout,stdin=None):
     nb_test = 0
     total = 0
-    f2 = open_file(file,stdin)
+    (f2,out2) = open_file(file,stdin)
     print(f2["eleve"]["Nom"],f2["eleve"]["Prenom"],f2["eleve"]["Classe"],
           sep=", ",end="")
     for d in value_tests:
-        test_name = d["test_name"]
+        test = d["test"]
         vname = d["vname"]
-        score = value_test(fprof[test_name],f2[vname])
+        score = value_test(test,f2[vname])
+        if type(score) == bool:
+            score = 1 if score else 0
         nb_test += 1
         total += score
         print(",",score, end="")
@@ -72,24 +91,32 @@ def test_file(fprof,value_tests,compare_tests,file,stdin=None):
         score = compare_test(fprof[fname],f2[fname],d["vector"])
         nb_test += 1
         total += score
-        print(",",score, end=", ")
-    print(total/nb_test*20.0)
+        print(",",score, end="")
+    if stdout_test != None:
+        score = stdout_test(stdout,out2)
+        if type(score) == bool:
+            score = 1 if score else 0
+        nb_test += 1
+        total += score
+    print(",", total/nb_test*20.0)
 
 def test_all():
     correction = sys.argv[1]
     folder = sys.argv[2]
-    stdin = sys.argv[3] if len(sys.argv) > 3 else None
-    fprof = open_file(correction,stdin)
+    stdin = open(sys.argv[3]).read() if len(sys.argv) > 3 else None
+    (fprof,stdout) = open_file(correction,stdin)
     files = os.listdir(folder)
     tests = fprof["tests"]
     value_tests = tests["value_tests"]
     compare_tests = tests["compare_tests"]
+    stdout_test = tests["stdout_test"]
     print_header(value_tests,compare_tests)
 
     for file in files:
-        if file.endswith(".py"): test_file(fprof,value_tests,compare_tests,
+        if file.endswith(".py"): test_file(fprof,
+                                           value_tests,compare_tests,stdout_test,
                                            folder + "/" + file,
-                                           stdin)
+                                           stdout,stdin)
 
 
 test_all()
