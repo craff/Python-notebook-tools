@@ -7,10 +7,14 @@ let files = ref []
 let markdown = ref true
 let do_corrige  = ref true
 let do_question = ref true
+let do_test     = ref true
+
+let clear2 p1 p2 = Arg.(Tuple [Clear p1; Clear p2])
 
 let spec = [
-    "-q", Arg.Clear do_corrige, "only produces question from templates"
-  ; "-c", Arg.Clear do_question, "only produces correction from templates"
+    "-q", clear2 do_corrige do_test, "only produces question from templates"
+  ; "-c", clear2 do_question do_test, "only produces correction from templates"
+  ; "-t", clear2 do_question do_corrige, "only produces correction from templates"
   ]
 
 let anon_fun = fun fname -> files := fname :: !files
@@ -18,7 +22,16 @@ let usage = Printf.sprintf "usage: %s files ..." Sys.argv.(0)
 
 let _ = Arg.parse spec anon_fun usage
 
-type out  = All | Corrige | Question | Comment
+type out  = All | Corrige | Question | Test | Comment
+
+let compat mode cur = match (mode, cur) with
+  | _       , All      -> true
+  | Question, Question -> true
+  | Corrige , Corrige  -> true
+  | Test    , Corrige  -> true
+  | Test    , Test     -> true
+  | _       , _        -> false
+
 type cell = Markdown of string list | Code of string list | None
 
 let strip_dashes l =
@@ -99,6 +112,7 @@ let treat_file out_mode fname =
     let bname = Filename.remove_extension fname in
     let ch = open_in fname in
     let oname = if out_mode = Corrige then bname ^ "_corrige.ipynb"
+                else if out_mode = Test then bname ^ "_test.ipynb"
                 else bname ^ ".ipynb"
     in
     let out = open_out oname in
@@ -118,17 +132,23 @@ let treat_file out_mode fname =
                 badPython (Printf.sprintf "line %d: bad #CORRIGE" !line_num);
               cur := Corrige
             end
-          else if starts_with ~prefix:"#COMMENT" line then
+          else if starts_with ~prefix:"#TEST" line then
             begin
               if !cur != All then
-                badPython (Printf.sprintf "line %d: bad #COMMENT" !line_num);
-              cur := Comment
+                badPython (Printf.sprintf "line %d: bad #TEST" !line_num);
+              cur := Test
             end
           else if starts_with ~prefix:"#QUESTION" line then
             begin
               if !cur != All then
                 badPython (Printf.sprintf "line %d: bad #QUESTION" !line_num);
               cur := Question
+            end
+          else if starts_with ~prefix:"#COMMENT" line then
+            begin
+              if !cur != All then
+                badPython (Printf.sprintf "line %d: bad #COMMENT" !line_num);
+              cur := Comment
             end
           else if starts_with ~prefix:"#FIN" line then
             begin
@@ -141,10 +161,10 @@ let treat_file out_mode fname =
               let is_md = String.length line >= 2 && line.[0] = '#' && line.[1] = '#' in
               let line = if is_md then strip_dashes line else line in
               let add_code line l =
-                 if !cur = All || out_mode = !cur then
+                 if compat out_mode !cur then
                    mode := Code (line :: l)
                  else if !cur = Comment then
-                   if out_mode = Corrige then
+                   if out_mode = Corrige || out_mode = Test then
                      mode := Code (line :: l)
                    else
                      mode := Code (("# " ^ line) :: l)
@@ -180,7 +200,8 @@ let _ =
     | ".py" -> treat_file Question fname
     | ".tpy" ->
        if !do_question then treat_file Question fname;
-       if !do_corrige  then treat_file Corrige fname
+       if !do_corrige  then treat_file Corrige fname;
+       if !do_test     then treat_file Test fname
     | _ -> badPython (Printf.sprintf "extension: %s invalid" ext)
   in
   List.iter fn !files

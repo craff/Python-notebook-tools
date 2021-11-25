@@ -8,7 +8,7 @@ py2nb files : converts python file or templates to notebooks.
 the convention is that line starting with ``##`` are markdown
 cells. When such lines are consecutive, they are in the same cell.
 
-A python templates (file.tpy) may contains marks like
+A python templates (file.tpy) may contains marked code section like
 ```
 	#QUESTION
 	...
@@ -20,14 +20,33 @@ or
 	...
 	#FIN
 ```
-In this case two notebooks are produced: file.ipynb and file_corrige.ipynb,
-the former not containing the line marked with ``#CORRIGE``, the latter
-not containing the line marker with ``#QUESTION``.
+or
+```
+	#TEST
+	...
+	#FIN
+```
+
+In this case three notebooks are produced: ``file.ipynb``, ``file_corrige.ipynb``
+and ``file_test.ipynb``. Annotation with ``#QUESTION`` are only copied in
+``file.ipynb``, annotation with ``#CORRIGE`` are copied in  ``file_corrige.ipynb``
+and ``file_test.ipynb`` and annotation with ``#TEST`` are only copied in
+``file_test.ipynb``.
+
+An annotation
+```
+	#COMMMENT
+	...
+	#FIN
+```
+means that the annotated lines are commented in ``file.ipynb``
+
 
 ```
 usage: py2nb/py2nb.exe files ...
-  -q only produces question for templates
-  -c only produces correction for templates
+  -q only produces questions for templates
+  -c only produces corrections for templates
+  -t only produces tests for templates
   -help  Display this list of options
   --help  Display this list of options
 ```

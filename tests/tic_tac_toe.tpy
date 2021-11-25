@@ -323,7 +323,7 @@ else:
     print(joueur,"a gagné")
 #FIN
 
-#CORRIGE
+#TEST
 vector1 = [([grille_test], {}),
            ([grille_test_ligne], {}),
            ([grille_test_colonne], {}),
