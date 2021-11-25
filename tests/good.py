@@ -18,8 +18,7 @@ def g(x):
 def h(x):
     return x
 
-tests = { "stdin": "0\n",
-          "value_tests": [
+tests = { "value_tests": [
               { "vname": "y", "test_name": "test_y" },
               { "vname": "f", "test_name": "test_f" }
           ],
