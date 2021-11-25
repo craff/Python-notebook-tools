@@ -5,8 +5,14 @@ let badPython s = raise (BadPython s)
 
 let files = ref []
 let markdown = ref true
+let do_corrige  = ref true
+let do_question = ref true
 
-let spec = []
+let spec = [
+    "-q", Arg.Clear do_corrige, "only produces question for templates"
+  ; "-c", Arg.Clear do_question, "only produces correction for templates"
+  ]
+
 let anon_fun = fun fname -> files := fname :: !files
 let usage = Printf.sprintf "usage: %s files ..." Sys.argv.(0)
 
@@ -90,11 +96,7 @@ let output_python ch cells =
 
 let treat_file out_mode fname =
   try
-    let bname =
-      match Filename.chop_suffix_opt ~suffix:".py" fname with
-      | None -> badPython "no extension .py"
-      | Some s -> s
-    in
+    let bname = Filename.remove_extension fname in
     let ch = open_in fname in
     let oname = if out_mode = Corrige then bname ^ "_corrige.ipynb"
                 else bname ^ ".ipynb"
@@ -158,5 +160,13 @@ let treat_file out_mode fname =
          exit 1
 
 let _ =
-  List.iter (treat_file Corrige) !files;
-  List.iter (treat_file Question) !files
+  let fn fname =
+    let ext = Filename.extension fname in
+    match ext with
+    | ".py" -> treat_file Question fname
+    | ".tpy" ->
+       if !do_question then treat_file Question fname;
+       if !do_corrige  then treat_file Corrige fname
+    | _ -> badPython (Printf.sprintf "extension: %s invalid" ext)
+  in
+  List.iter fn !files
