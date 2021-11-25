@@ -9,8 +9,8 @@ let do_corrige  = ref true
 let do_question = ref true
 
 let spec = [
-    "-q", Arg.Clear do_corrige, "only produces question for templates"
-  ; "-c", Arg.Clear do_question, "only produces correction for templates"
+    "-q", Arg.Clear do_corrige, "only produces question from templates"
+  ; "-c", Arg.Clear do_question, "only produces correction from templates"
   ]
 
 let anon_fun = fun fname -> files := fname :: !files
