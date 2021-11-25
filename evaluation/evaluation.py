@@ -28,8 +28,10 @@ def compare_test(f1,f2,vector,timeout=1):
             a1 = (1,f1(*args,*kargs))
             out.close()
             out1 = open("tmp.out").read()
+            os.remove("tmp.out")
         except:
             out.close()
+            os.remove("tmp.out")
             a1 = None
             out1 = None
         signal.alarm(0)
@@ -41,9 +43,11 @@ def compare_test(f1,f2,vector,timeout=1):
             sys.stdout = sys.__stdout__
             out.close()
             out2 = open("tmp.out").read()
+            os.remove("tmp.out")
         except:
             sys.stdout = sys.__stdout__
             out.close()
+            os.remove("tmp.out")
             a2 = None
             out2 = None
         signal.alarm(0)
@@ -61,6 +65,7 @@ def open_file(fname,stdin=None):
     sys.stdout = sys.__stdout__
     out.close()
     out = open("tmp.out").read()
+    os.remove("tmp.out")
     return (f,out)
 
 def print_header(value_tests,compare_tests,sep=","):
