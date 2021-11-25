@@ -1,0 +1,6 @@
+(include_subdirs unqualified)
+
+(executable
+  (name nb2py)
+  (modules :standard)
+  (libraries yojson))

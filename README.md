@@ -1,0 +1,30 @@
+Python notebook tools
+=====================
+
+Some tools to convert generate notebook (.ipynb) from python templates
+(.tpy) or python files (.py) and python file (.py) from notebook (.ipynb)
+
+py2nb files : converts python file or templates to notebooks.
+the convention is that line starting with ``##`` are markdown
+cells. When such lines are consecutive, they are in the same cell.
+
+A python templates (file.tpy) may contains marks like
+```
+	#QUESTION
+	...
+	#FIN
+```
+or
+```
+	#CORRIGE
+	...
+	#FIN
+```
+In this case two notebooks are produced: file.ipynb and file_corrige.ipynb,
+the former not containing the line marked with ``#CORRIGE``, the latter
+not containing the line marker with ``#QUESTION``.
+
+nb2py file : converts notebook back to python with the same convention as above.
+
+Caveats: py2nb followed by nb2py may remove or add some empty lines that
+separates cells. Basically, we enforce one empty line between cells.
