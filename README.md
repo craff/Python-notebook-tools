@@ -28,3 +28,7 @@ nb2py file : converts notebook back to python with the same convention as above.
 
 Caveats: py2nb followed by nb2py may remove or add some empty lines that
 separates cells. Basically, we enforce one empty line between cells.
+
+WORK IN PROGRESS:
+The folder tests contains a file notation.py that is a good starting example if
+you want to evaluate the workd of some students.
