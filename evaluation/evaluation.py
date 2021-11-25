@@ -78,12 +78,12 @@ def test_file(fprof,value_tests,compare_tests,file,stdin=None):
 def test_all():
     correction = sys.argv[1]
     folder = sys.argv[2]
-    fprof = open_file(correction)
+    stdin = sys.argv[3] if len(sys.argv) > 3 else None
+    fprof = open_file(correction,stdin)
     files = os.listdir(folder)
     tests = fprof["tests"]
     value_tests = tests["value_tests"]
     compare_tests = tests["compare_tests"]
-    stdin = tests["stdin"]
     print_header(value_tests,compare_tests)
 
     for file in files:
