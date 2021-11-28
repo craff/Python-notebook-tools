@@ -4,6 +4,8 @@ y = 0
 def test_y(y):
     return y == 0
 
+new_value_test("test_y",test_y,"y")
+
 def f(x,y):
     return(x+y)
 
@@ -17,29 +19,30 @@ def test_f(f):
         return 1
     else: return 0
 
+new_value_test("test_f",test_f,"f")
+
+t = new_compare_test("f")
+add_compare_test(t,-1,-1)
+add_compare_test(t,0,0)
+add_compare_test(t,0,1)
+add_compare_test(t,2,2)
+add_compare_test(t,1,2)
+
 def g(x):
     return(x)
+
+t = new_compare_test("g")
+add_compare_test(t,-1)
+add_compare_test(t,0)
+add_compare_test(t,1)
+add_compare_test(t,2)
 
 def h(x):
     return x
 
-tests = { "value_tests": [
-              { "vname": "y", "test_name": "test_y", "test": test_y },
-              { "vname": "f", "test_name": "test_f", "test": test_f }
-          ],
-          "compare_tests":
-          [
-              { "fname": "f", "vector": [([-1,-1],{}),
-                                         ([0,0],{}),
-                                         ([0,1],{}),
-                                         ([2,2],{}),
-                                         ([1,2],{})]},
-              { "fname": "g", "vector": [([-1],{}),
-                                         ([0],{}),
-                                         ([1],{})]},
-              { "fname": "h", "vector": [([-1],{}),
-                                         ([0],{}),
-                                         ([1],{})]}
-          ],
-          "stdout_test": None
-         }
+
+t = new_compare_test("h")
+add_compare_test(t,-1)
+add_compare_test(t,0)
+add_compare_test(t,1)
+add_compare_test(t,2)

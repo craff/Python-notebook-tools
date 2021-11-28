@@ -54,12 +54,48 @@ def compare_test(f1,f2,vector,timeout=1):
         if a1 == a2 and out1 == out2: good += 1
     return(good/total)
 
+evaluation_tests = {
+    "value_tests":[],
+    "compare_tests":[],
+    "stdout_test":None
+}
+
+def new_value_test(test_name,test,vname):
+    print(evaluation_tests)
+    evaluation_tests["value_tests"].append({ "vname":vname, "test_name":test_name, "test":test })
+
+def new_compare_test(fname,vector=[],timeout=1):
+    print(evaluation_tests)
+    ct = evaluation_tests["compare_tests"]
+    d = None
+    for x in ct:
+        if x["fname"] == fname:
+            d = x["fname"]
+            break
+    if d == None:
+        d = { "fname":fname, "timeout":timeout, "vector":vector }
+        ct.append(d)
+    return(d)
+
+def add_to_test_vector(vector,*args,**kargs):
+    vector.append((args,kargs))
+
+def add_compare_test(d,*args,**kargs):
+    add_to_test_vector(d["vector"],*args,**kargs)
+
+def set_stdout_test(test):
+    evaluation_tests["stdout_test"] = test
+
 def open_file(fname,stdin=None):
-    f = {}
+    f = { "new_value_test" :new_value_test,
+          "new_compare_test": new_compare_test,
+          "add_to_test_vector": add_to_test_vector,
+          "add_compare_test": add_compare_test,
+          "set_stdout_test": set_stdout_test }
     out = open("tmp.out",mode='w')
     sys.stdout = out
     if stdin != None:
-        sys.stdin = StringIO(stdin)
+         sys.stdin = StringIO(stdin)
     exec(open(fname).read(),f,f)
     sys.stdin = sys.__stdin__
     sys.stdout = sys.__stdout__
@@ -93,7 +129,8 @@ def test_file(fprof,value_tests,compare_tests,stdout_test,file,stdout,stdin=None
         print(",",score, end="")
     for d in compare_tests:
         fname = d["fname"]
-        score = compare_test(fprof[fname],f2[fname],d["vector"])
+        timeout = d["timeout"] if "timeout" in d else 1
+        score = compare_test(fprof[fname],f2[fname],d["vector"],timeout=timeout)
         nb_test += 1
         total += score
         print(",",score, end="")
@@ -105,13 +142,14 @@ def test_file(fprof,value_tests,compare_tests,stdout_test,file,stdout,stdin=None
         total += score
     print(",", total/nb_test*20.0)
 
+
 def test_all():
     correction = sys.argv[1]
     folder = sys.argv[2]
     stdin = open(sys.argv[3]).read() if len(sys.argv) > 3 else None
     (fprof,stdout) = open_file(correction,stdin)
     files = os.listdir(folder)
-    tests = fprof["tests"]
+    tests = evaluation_tests
     value_tests = tests["value_tests"]
     compare_tests = tests["compare_tests"]
     stdout_test = tests["stdout_test"]

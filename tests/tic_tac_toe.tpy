@@ -50,6 +50,11 @@ grille_test_ligne = [
     ['O', ' ', ' ']
     #FIN
 ]
+#TEST
+new_value_test("question 1 a",
+               (lambda v: verifier_lignes(v) != ' '),
+               "grille_test_ligne")
+#FIN
 
 # une grille avec une colonne gagnante:
 grille_test_colonne = [
@@ -59,6 +64,11 @@ grille_test_colonne = [
     ['O', ' ', ' ']
     #FIN
 ]
+#TEST
+new_value_test("question 1 b",
+               (lambda v: verifier_colonnes(v) != ' '),
+               "grille_test_colonne")
+#FIN
 
 # une grille avec une diagonale gagnante:
 grille_test_diagonale = [
@@ -68,6 +78,11 @@ grille_test_diagonale = [
     ['X', ' ', ' ']
     #FIN
 ]
+#TEST
+new_value_test("question 1 c",
+               (lambda v: verifier_diagonales(v) != ' '),
+               "grille_test_diagonale")
+#FIN
 
 ## Question 2
 ## ----------
@@ -85,6 +100,34 @@ def afficher_grille(grille):
     for i in range(0,3):
         print(grille[i][0],grille[i][1],grille[i][2],sep='|') # à compléter
     #FIN
+#TEST
+# on définit un vecteur de test, commun à plusieurs test.
+vector = []
+add_to_test_vector(vector,grille_test)
+add_to_test_vector(vector,grille_test_ligne)
+add_to_test_vector(vector,grille_test_colonne)
+add_to_test_vector(vector,grille_test_diagonale)
+grille0 =  [
+ [' ', ' ', ' '],
+ [' ', ' ', ' '],
+ [' ', ' ', ' ']
+]
+add_to_test_vector(vector,grille0)
+grille1 =  [
+ [' ', 'X', ' '],
+ [' ', 'X', ' '],
+ [' ', 'X', ' ']
+]
+add_to_test_vector(vector,grille1)
+grille2 =  [
+ [' ', ' ', ' '],
+ ['O', 'O', 'O'],
+ [' ', ' ', ' ']
+]
+add_to_test_vector(vector,grille2)
+
+new_compare_test("afficher_grille",vector)
+#FIN
 
 ## décommenter ces lignes pour tester votre fonction
 # afficher_grille(grille_test)
@@ -125,6 +168,10 @@ assert(verifier_lignes(grille_test_colonne)   == ' ')
 assert(verifier_lignes(grille_test_diagonale) == ' ')
 #FIN
 
+#TEST
+new_compare_test("verifier_lignes", vector)
+#FIN
+
 ## Question 4
 ## ----------
 ##
@@ -154,6 +201,10 @@ assert(verifier_colonnes(grille_test)           == ' ')
 assert(verifier_colonnes(grille_test_ligne)     == ' ')
 assert(verifier_colonnes(grille_test_colonne)   == 'O')
 assert(verifier_colonnes(grille_test_diagonale) == ' ')
+#FIN
+
+#TEST
+new_compare_test("verifier_colonnes", vector)
 #FIN
 
 ## Question 5
@@ -188,6 +239,10 @@ assert(verifier_diagonales(grille_test_colonne)   == ' ')
 assert(verifier_diagonales(grille_test_diagonale) == 'X')
 #FIN
 
+#TEST
+new_compare_test("verifier_diagonales", vector)
+#FIN
+
 ## Question 6
 ## ----------
 
@@ -218,6 +273,10 @@ assert(verifier_alignement(grille_test_colonne)   == 'O')
 assert(verifier_alignement(grille_test_diagonale) == 'X')
 #FIN
 
+#TEST
+new_compare_test("verifier_alignement", vector)
+#FIN
+
 ## Question 7
 ## ----------
 ##
@@ -237,6 +296,19 @@ def joue_coup(joueur,position,grille):
     j = position%3
     grille[i][j] = joueur
     #FIN
+
+#TEST
+def test(joue):
+    for n in range(0,9):
+        g = [ l.copy() for l in grille0 ]
+        joue('W',n,g)
+        for i in range(0,3):
+            for j in range(0,3):
+                expected = 'W' if 3*i + j == n else ' '
+                if g[i][j] != expected: return False
+    return True
+new_value_test("Question 7", test, "joue_coup")
+#FIN
 
 ## n'oubliez pas de tester votre fonction.
 # print(grille_test)
@@ -321,36 +393,4 @@ if gagnant == ' ':
     print("partie nulle")
 else:
     print(joueur,"a gagné")
-#FIN
-
-#TEST
-vector1 = [([grille_test], {}),
-           ([grille_test_ligne], {}),
-           ([grille_test_colonne], {}),
-           ([grille_test_diagonale], {})]
-
-tests = { "value_tests": [
-             { "vname": "grille_test_ligne",
-               "test_name": "Question 1 a",
-               "test": (lambda v: verifier_lignes(v) != ' ') },
-             { "vname": "grille_test_colonne",
-               "test_name": "Question 1 b",
-               "test": (lambda v: verifier_colonnes(v) != ' ') },
-             { "vname": "grille_test_diagonale",
-               "test_name": "Question 1 c",
-               "test": (lambda v: verifier_diagonales(v) != ' ') }
-          ],
-         "compare_tests": [
-             { "fname": "afficher_grille",
-               "vector": vector1 },
-             { "fname": "verifier_lignes",
-               "vector": vector1 },
-             { "fname": "verifier_colonnes",
-               "vector": vector1 },
-             { "fname": "verifier_diagonales",
-               "vector": vector1 },
-             { "fname": "verifier_alignement",
-               "vector": vector1 }
-          ],
-          "stdout_test": None }
 #FIN

@@ -63,10 +63,13 @@ let starts_with ~prefix:p s =
     with Exit -> false
 
 let json_string_list l =
-  List.rev (
-      List.mapi (fun i l ->
-          let l = if i = 0 then l else l ^ "\n" in
-          `String l) l)
+  let rec fn acc start =
+    function ""::l when start -> fn acc start l
+           | s::l when start -> fn (`String s :: acc) false l
+           | s::l -> fn (`String (s ^ "\n") :: acc) false l
+           | [] -> acc
+  in
+  fn [] true l
 
 let output_python ch cells =
   let fn = function
