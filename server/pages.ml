@@ -231,7 +231,7 @@ let show_solution ?(now="") userid exoid =
   let html = [%html {|
     <h3>Résultat de l'exercice</h3>
     <table>
-    <tr>|}nowh{|<th>Meilleure</th><th>Précédente</th></tr>
+    <tr>|}nowh{|<th>Meilleure</th><th>Dernière</th></tr>
     <tr>|}nowt{|<td>|}[Html.txt bt]{|</td><td>|}[Html.txt lt]{|</td></tr>
     <tr>|}nowd{|
         <td><pre>|}[Html.txt best]{|</pre></td>

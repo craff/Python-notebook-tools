@@ -79,7 +79,7 @@ let download_handler req =
       (Printexc.to_string e)
 
 let () =
-  let server = create () in
+  let server = create ~port:Options.port () in
   let _ = Db.init () in
 
   begin
