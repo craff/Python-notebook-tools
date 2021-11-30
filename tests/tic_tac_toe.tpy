@@ -1,9 +1,5 @@
 ## Mini-projet – Tic Tac Toe
 ## =========================
-
-eleve ={ "Nom": "...",
-         "Prenom": "...",
-         "Classe": "..." }
 ##
 ## Le but de ce projet est d'écrire une version du jeu
 ## Tic Tac Toe dans laquelle deux joueurs humains
@@ -51,7 +47,7 @@ grille_test_ligne = [
     #FIN
 ]
 #TEST
-new_value_test("question 1 a",
+new_value_test("1 a",
                (lambda v: verifier_lignes(v) != ' '),
                "grille_test_ligne")
 #FIN
@@ -65,7 +61,7 @@ grille_test_colonne = [
     #FIN
 ]
 #TEST
-new_value_test("question 1 b",
+new_value_test("1 b",
                (lambda v: verifier_colonnes(v) != ' '),
                "grille_test_colonne")
 #FIN
@@ -79,7 +75,7 @@ grille_test_diagonale = [
     #FIN
 ]
 #TEST
-new_value_test("question 1 c",
+new_value_test("1 c",
                (lambda v: verifier_diagonales(v) != ' '),
                "grille_test_diagonale")
 #FIN
@@ -126,7 +122,7 @@ grille2 =  [
 ]
 add_to_test_vector(vector,grille2)
 
-new_compare_test("afficher_grille",vector)
+new_compare_test("2","afficher_grille",vector)
 #FIN
 
 ## décommenter ces lignes pour tester votre fonction
@@ -169,7 +165,7 @@ assert(verifier_lignes(grille_test_diagonale) == ' ')
 #FIN
 
 #TEST
-new_compare_test("verifier_lignes", vector)
+new_compare_test("3","verifier_lignes", vector)
 #FIN
 
 ## Question 4
@@ -204,7 +200,7 @@ assert(verifier_colonnes(grille_test_diagonale) == ' ')
 #FIN
 
 #TEST
-new_compare_test("verifier_colonnes", vector)
+new_compare_test("4","verifier_colonnes", vector)
 #FIN
 
 ## Question 5
@@ -240,7 +236,7 @@ assert(verifier_diagonales(grille_test_diagonale) == 'X')
 #FIN
 
 #TEST
-new_compare_test("verifier_diagonales", vector)
+new_compare_test("5","verifier_diagonales", vector)
 #FIN
 
 ## Question 6
@@ -274,7 +270,7 @@ assert(verifier_alignement(grille_test_diagonale) == 'X')
 #FIN
 
 #TEST
-new_compare_test("verifier_alignement", vector)
+new_compare_test("6","verifier_alignement", vector)
 #FIN
 
 ## Question 7
@@ -307,7 +303,7 @@ def test(joue):
                 expected = 'W' if 3*i + j == n else ' '
                 if g[i][j] != expected: return False
     return True
-new_value_test("Question 7", test, "joue_coup")
+new_value_test("7", test, "joue_coup")
 #FIN
 
 ## n'oubliez pas de tester votre fonction.

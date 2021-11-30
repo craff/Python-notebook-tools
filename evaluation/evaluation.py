@@ -54,26 +54,23 @@ def compare_test(f1,f2,vector,timeout=1):
         if a1 == a2 and out1 == out2: good += 1
     return(good/total)
 
-evaluation_tests = {
-    "value_tests":[],
-    "compare_tests":[],
-    "stdout_test":None
-}
+evaluation_tests = []
 
 def new_value_test(test_name,test,vname):
     print(evaluation_tests)
-    evaluation_tests["value_tests"].append({ "vname":vname, "test_name":test_name, "test":test })
+    evaluation_tests.append({ "type":"value", "vname":vname,
+                              "test_name":test_name, "test":test })
 
-def new_compare_test(fname,vector=[],timeout=1):
+def new_compare_test(test_name,fname,vector=[],timeout=1):
     print(evaluation_tests)
-    ct = evaluation_tests["compare_tests"]
+    ct = evaluation_tests
     d = None
     for x in ct:
-        if x["fname"] == fname:
+        if x["type"]=="compare" and x["fname"] == fname:
             d = x["fname"]
             break
     if d == None:
-        d = { "fname":fname, "timeout":timeout, "vector":vector }
+        d = { "type":"compare", "test_name":test_name,"fname":fname, "timeout":timeout, "vector":vector }
         ct.append(d)
     return(d)
 
@@ -83,15 +80,15 @@ def add_to_test_vector(vector,*args,**kargs):
 def add_compare_test(d,*args,**kargs):
     add_to_test_vector(d["vector"],*args,**kargs)
 
-def set_stdout_test(test):
-    evaluation_tests["stdout_test"] = test
+def new_stdout_test(name,test):
+    evaluation_tests.append({"type": "stdout", "test_name":name, "stdout_test":test})
 
 def open_file(fname,stdin=None):
     f = { "new_value_test" :new_value_test,
           "new_compare_test": new_compare_test,
           "add_to_test_vector": add_to_test_vector,
           "add_compare_test": add_compare_test,
-          "set_stdout_test": set_stdout_test }
+          "new_stdout_test": new_stdout_test }
     out = open("tmp.out",mode='w')
     sys.stdout = out
     if stdin != None:
@@ -104,62 +101,64 @@ def open_file(fname,stdin=None):
     os.remove("tmp.out")
     return (f,out)
 
-def print_header(value_tests,compare_tests,sep=","):
-    print("Nom, Prenom, Classe",end="")
-    for d in value_tests:
-        print(",",d["test_name"],end="")
-    for d in compare_tests:
-        print(",",d["fname"],end="")
+def print_header(tests,sep=","):
+    sep=""
+    for d in tests:
+        print(sep,d["test_name"],end="")
+        sep=","
     print(", Note")
 
-def test_file(fprof,value_tests,compare_tests,stdout_test,file,stdout,stdin=None):
+def test_file(fprof,multi,tests,file,stdout,stdin=None):
     nb_test = 0
     total = 0
     (f2,out2) = open_file(file,stdin)
-    print(f2["eleve"]["Nom"],f2["eleve"]["Prenom"],f2["eleve"]["Classe"],
-          sep=", ",end="")
-    for d in value_tests:
-        test = d["test"]
-        vname = d["vname"]
-        score = value_test(test,f2[vname])
-        if type(score) == bool:
-            score = 1 if score else 0
-        nb_test += 1
-        total += score
-        print(",",score, end="")
-    for d in compare_tests:
-        fname = d["fname"]
-        timeout = d["timeout"] if "timeout" in d else 1
-        score = compare_test(fprof[fname],f2[fname],d["vector"],timeout=timeout)
-        nb_test += 1
-        total += score
-        print(",",score, end="")
-    if stdout_test != None:
-        score = stdout_test(stdout,out2)
-        if type(score) == bool:
-            score = 1 if score else 0
-        nb_test += 1
-        total += score
-    print(",", total/nb_test*20.0)
-
+    sep = ""
+    for d in tests:
+        if d["type"] == "value":
+            test = d["test"]
+            vname = d["vname"]
+            score = value_test(test,f2[vname])
+            if type(score) == bool:
+                score = 1 if score else 0
+            nb_test += 1
+            total += score
+        elif d["type"] == "compare":
+            fname = d["fname"]
+            timeout = d["timeout"] if "timeout" in d else 1
+            score = compare_test(fprof[fname],f2[fname],d["vector"],timeout=timeout)
+            nb_test += 1
+            total += score
+        elif d["type"] == "stdout":
+            score = stdout_test(stdout,out2)
+            if type(score) == bool:
+                score = 1 if score else 0
+            nb_test += 1
+            total += score
+        if multi: print(sep,score, end="")
+        else: print(d["test_name"],":",score)
+        sep=","
+    if multi: print(sep, total/nb_test*20.0)
+    else: print("Total:", total/nb_test*20.0)
 
 def test_all():
     correction = sys.argv[1]
     folder = sys.argv[2]
     stdin = open(sys.argv[3]).read() if len(sys.argv) > 3 else None
     (fprof,stdout) = open_file(correction,stdin)
-    files = os.listdir(folder)
     tests = evaluation_tests
-    value_tests = tests["value_tests"]
-    compare_tests = tests["compare_tests"]
-    stdout_test = tests["stdout_test"]
-    print_header(value_tests,compare_tests)
-
-    for file in files:
-        if file.endswith(".py"): test_file(fprof,
-                                           value_tests,compare_tests,stdout_test,
-                                           folder + "/" + file,
+    if os.path.isdir(folder):
+        print_header(tests)
+        files = os.listdir(folder)
+        for file in files:
+            if file.endswith(".py"): test_file(fprof,True,
+                                               tests,
+                                               folder + "/" + file,
+                                               stdout,stdin)
+    else:
+        file = folder
+        if file.endswith(".py"): test_file(fprof,False,
+                                           tests,
+                                           file,
                                            stdout,stdin)
-
 
 test_all()

@@ -21,7 +21,7 @@ def test_f(f):
 
 new_value_test("test_f",test_f,"f")
 
-t = new_compare_test("f")
+t = new_compare_test("f","f")
 add_compare_test(t,-1,-1)
 add_compare_test(t,0,0)
 add_compare_test(t,0,1)
@@ -31,7 +31,7 @@ add_compare_test(t,1,2)
 def g(x):
     return(x)
 
-t = new_compare_test("g")
+t = new_compare_test("g","g")
 add_compare_test(t,-1)
 add_compare_test(t,0)
 add_compare_test(t,1)
@@ -41,7 +41,7 @@ def h(x):
     return x
 
 
-t = new_compare_test("h")
+t = new_compare_test("h","h")
 add_compare_test(t,-1)
 add_compare_test(t,0)
 add_compare_test(t,1)
