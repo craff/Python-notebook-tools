@@ -15,12 +15,13 @@ let css =
    |css}
 
 let html_wrapper body =
+  let style = href "style.css" in
   Format.asprintf "%a" (Html.pp ()) [%html
       {|<html>
          <head>
           <title>Pynbtools</title>
           <meta charset="utf-8"/>
-          <link rel="stylesheet" href="style.css">
+          <link rel="stylesheet" href="|}style{|">
          </head>
         <body>|}body{|
         </body>

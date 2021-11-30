@@ -56,10 +56,11 @@ def compare_test(f1,f2,vector,timeout=1):
 
 evaluation_tests = []
 
-def new_value_test(test_name,test,vname):
+def new_value_test(test_name,test,vname,timeout=1):
     print(evaluation_tests)
     evaluation_tests.append({ "type":"value", "vname":vname,
-                              "test_name":test_name, "test":test })
+                              "test_name":test_name, "test":test,
+                              "timeout":timeout})
 
 def new_compare_test(test_name,fname,vector=[],timeout=1):
     print(evaluation_tests)
@@ -123,7 +124,8 @@ def test_file(fprof,multi,tests,file,stdout,stdin=None):
         if d["type"] == "value":
             test = d["test"]
             vname = d["vname"]
-            score = value_test(test,f2[vname]) if vname in f2 else 0
+            timeout = d["timeout"] if "timeout" in d else 1
+            score = value_test(test,f2[vname],timeout) if vname in f2 else 0
             if type(score) == bool:
                 score = 1 if score else 0
             nb_test += 1

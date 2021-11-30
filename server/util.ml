@@ -88,7 +88,7 @@ let read_file fname =
 let run_cmd cmd =
   Printf.eprintf "run: %S\n%!" cmd;
   let (stdout,stdin,stderr as chs) =
-    Unix.open_process_full ("firejail " ^ cmd) (Unix.environment ())
+    Unix.open_process_full ("firejail --quiet " ^ cmd) (Unix.environment ())
   in
   try
     let pid = Unix.process_full_pid chs in

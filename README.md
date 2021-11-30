@@ -1,6 +1,9 @@
 Python notebook tools
 =====================
 
+CONVERSIONS
+-----------
+
 Some tools to convert generate notebook (.ipynb) from python templates
 (.tpy) or python files (.py) and python file (.py) from notebook (.ipynb)
 
@@ -63,6 +66,63 @@ usage: nb2py/nb2py.exe files ...
 Caveats: py2nb followed by nb2py may remove or add some empty lines that
 separates cells. Basically, we enforce one empty line between cells.
 
-WORK IN PROGRESS:
+AUTO NOTATION
+-------------
+
 The folder ``evaluation`` contains a file ``evaluation.py``
-that is a scrit to evaluate the work of students...
+that is a scrit to evaluate the work of students. It uses tests added in your
+.tpy file with the math ``#TEST``.
+
+To test your file there are three basic function
+
+* You can test the stdout of running the whole python file using
+  ```
+  new_stdout_test(name,test)
+  ```
+  This test, like all other needs a name for printing the result, and returns
+  a score between $0.0$ and $1.0$. The ``test(stdout)`` is run where ``stdout``
+  is the output of the whole file being evaluated.
+
+* You can test a value declared in the file with
+  ```
+  new_value_test(name,test,vname,timeout=1)
+  ```
+  where ``vname`` in the name of a value ``v`` declared in the file to be tested.
+  as above, ``test(v)`` is run and returns a score. ``v`` maybe a function.
+
+* You can compare the output of the teacher version with the following functions:
+  ```
+  d=new_compare_test(name,fname,vector=[],timeout=1)
+  add_compare_test(d,*args,**kargs)
+  add_to_test_vector(vector,*args,**kargs)
+  ```
+  The name of the function to be compared is ``fname``
+  Typically, you create the compare test with the first function and
+  add arguments (positional and names) with ``add_compare_test``.
+  If several functions need to be tested with the same arguments,
+  you can create a test vector using
+  ``add_to_test_vector(vector,*args,**kargs)``
+  and an initially empty sequence as vector. Then, you can use this vector
+  in new_compare_test.
+
+Here is a simple example:
+```
+## A simple example of python template
+## ===================================
+
+def add(x,y):
+    """return the sum of x and y"""
+    #CORRIGE
+    return x+y
+    #FIN
+    #QUESTION
+    pass # finish the function
+    #FIN
+
+#TEST
+d=new_compare_test("T0",add)
+for i in range(-10,10):
+  for j in range(-10,10):
+      add_compare_test(d,i,j)
+#FIN
+```
