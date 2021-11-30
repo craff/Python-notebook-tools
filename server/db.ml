@@ -145,6 +145,17 @@ let new_user query is_admin =
   query ~login ~name ~firstname ~password ~role db
                >>= Caqti_lwt.or_fail |> Lwt_main.run
 
+let get_exo_by_id exoid =
+  let query =
+    [%rapper get_opt
+        {sql|SELECT @ptime{created_timestamp},@string{name},@string{fname},@bool{visible} FROM exos WHERE exoid=%int{exoid}|sql}]
+  in
+  let result = query ~exoid db
+               >>= Caqti_lwt.or_fail |> Lwt_main.run in
+  match result with
+  | Some r -> r
+  | None -> failwith "Bad exoid"
+
 let get_exos_by_id userid =
   let query =
     [%rapper get_many

@@ -156,22 +156,20 @@ let show_notes exoid exoname =
   in
   Ok (html_wrapper html)
 
-let exos_student userid =
-  let exos = Db.get_visible_exos () in
-  let fn (exoid,time,name,fname) =
-    let note = Db.get_note exoid userid in
-    let exoid = string_of_int exoid in
-    let time = Util.string_of_time time in
-    let dt = [Html.txt (name ^ " (" ^ time ^ ")")] in
-    let py_url = href ("download?exoid="^exoid^"&type=question_py") in
-    let ipynb_url = href ("download?exoid="^exoid^"&type=question_ipynb") in
-    let show_url = href (Printf.sprintf "show_solution?exoid=%s" exoid) in
-    let note = match note with
-      | None -> []
-      | Some n ->
-         let n = [Html.txt (Printf.sprintf "%.1f" n)] in
-         [%html {|&nbsp;<a href="|}show_url{|">Note: |}n{|</a>|}]
-    in
+let form_exo userid exoid name time fname =
+  let note = Db.get_note exoid userid in
+  let exoid = string_of_int exoid in
+  let time = Util.string_of_time time in
+  let dt = [Html.txt (name ^ " (" ^ time ^ ")")] in
+  let py_url = href ("download?exoid="^exoid^"&type=question_py") in
+  let ipynb_url = href ("download?exoid="^exoid^"&type=question_ipynb") in
+  let show_url = href (Printf.sprintf "show_solution?exoid=%s" exoid) in
+  let note = match note with
+    | None -> []
+    | Some n ->
+       let n = [Html.txt (Printf.sprintf "%.1f" n)] in
+       [%html {|&nbsp;<a href="|}show_url{|">Note: |}n{|</a>|}]
+  in
     [%html
       dt{|:<br/>
         <form enctype="multipart/form-data" method="Post" action="|}(href "submit_solution"){|">
@@ -182,6 +180,11 @@ let exos_student userid =
               <input type="file" id="file" name="solution"/>
            <input type="submit" name="submit" value="Envoyer"/>
         </form><br/>|}]
+
+let exos_student userid =
+  let exos = Db.get_visible_exos () in
+  let fn (exoid,time,name,fname) =
+    form_exo userid exoid name time fname
   in
   [%html {|<h3>Exercices disponibles</h3>|}] ::
     List.flatten (List.map fn exos)
@@ -224,6 +227,7 @@ let home_page_logged login id role =
   html_wrapper !contents
 
 let show_solution ?(now="") userid exoid =
+  let (time,name,fname,_visible) = Db.get_exo_by_id exoid in
   let (best,bt) = Db.best_solution userid exoid in
   let (latest,lt) = Db.latest_solution userid exoid in
   let nowh = if now <> "" then [[%html {|<th>Actuelle</th>|}]] else [] in
@@ -237,7 +241,8 @@ let show_solution ?(now="") userid exoid =
     <tr>|}nowd{|
         <td><pre>|}[Html.txt best]{|</pre></td>
         <td><pre>|}[Html.txt latest]{|</pre></td>
-        </tr></table>|}]
+        </tr></table><br/>|}
+    (form_exo userid exoid name time fname)]
   in
   html_wrapper html
 
