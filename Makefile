@@ -16,7 +16,7 @@ tests: all
 	dune exec -- nb2py/nb2py.exe tests/tic_tac_toe.ipynb tests/tic_tac_toe_corrige.ipynb tests/tic_tac_toe_test.ipynb
 	if [ ! -d tests/tmp ]; then mkdir tests/tmp; fi
 	cp tests/tic_tac_toe_corrige.py tests/tic_tac_toe.py tests/tmp
-	python3 evaluation/evaluation.py tests/tic_tac_toe_test.py tests/tmp tests/tic_tac_toe.txt
+	firejail python3 evaluation/evaluation.py tests/tic_tac_toe_test.py tests/tmp tests/tic_tac_toe.txt
 	dune exec -- py2nb/py2nb.exe tests/polynome2.tpy
 	dune exec -- nb2py/nb2py.exe tests/polynome2.ipynb tests/polynome2_corrige.ipynb tests/polynome2_test.ipynb
 	if [ ! -d tests/tmp2 ]; then mkdir tests/tmp2; fi

@@ -131,7 +131,6 @@ let show_notes exoid exoname =
   let notes = Db.get_notes exoid in
   let headers = ref [] in
   let fn (name,firstname,result) =
-    Printf.eprintf "%s\n%!" result;
     let l = String.split_on_char '\n' result in
     let gn l = match String.split_on_char ':' l with
       | h::n::_ -> Some (h, float_of_string n)

@@ -88,7 +88,7 @@ let read_file fname =
 let run_cmd cmd =
   Printf.eprintf "run: %S\n%!" cmd;
   let (stdout,stdin,stderr as chs) =
-    Unix.open_process_full cmd (Unix.environment ())
+    Unix.open_process_full ("firejail " ^ cmd) (Unix.environment ())
   in
   try
     let pid = Unix.process_full_pid chs in
@@ -96,7 +96,10 @@ let run_cmd cmd =
     let err = read_all stderr in
     close_out stdin; close_in stdout; close_in stderr;
     let (_,status) = Unix.(waitpid [WUNTRACED] pid) in
+    if status <> Unix.WEXITED 0 then
+      Printf.eprintf "out:\n%serr:\n%s\n%!" out err;
     (out,err,status)
+
   with e ->
     close_out stdin; close_in stdout; close_in stderr;
     raise e

@@ -83,7 +83,7 @@ def add_compare_test(d,*args,**kargs):
 def new_stdout_test(name,test):
     evaluation_tests.append({"type": "stdout", "test_name":name, "stdout_test":test})
 
-def open_file(fname,stdin=None):
+def open_file(fname,stdin=None,timeout=1):
     f = { "new_value_test" :new_value_test,
           "new_compare_test": new_compare_test,
           "add_to_test_vector": add_to_test_vector,
@@ -93,7 +93,12 @@ def open_file(fname,stdin=None):
     sys.stdout = out
     if stdin != None:
          sys.stdin = StringIO(stdin)
-    exec(open(fname).read(),f,f)
+    try:
+        signal.alarm(timeout)
+        exec(open(fname).read(),f,f)
+    except:
+        pass
+    signal.alarm(0)
     sys.stdin = sys.__stdin__
     sys.stdout = sys.__stdout__
     out.close()
@@ -114,10 +119,11 @@ def test_file(fprof,multi,tests,file,stdout,stdin=None):
     (f2,out2) = open_file(file,stdin)
     sep = ""
     for d in tests:
+
         if d["type"] == "value":
             test = d["test"]
             vname = d["vname"]
-            score = value_test(test,f2[vname])
+            score = value_test(test,f2[vname]) if vname in f2 else 0
             if type(score) == bool:
                 score = 1 if score else 0
             nb_test += 1
@@ -125,7 +131,7 @@ def test_file(fprof,multi,tests,file,stdout,stdin=None):
         elif d["type"] == "compare":
             fname = d["fname"]
             timeout = d["timeout"] if "timeout" in d else 1
-            score = compare_test(fprof[fname],f2[fname],d["vector"],timeout=timeout)
+            score = compare_test(fprof[fname],f2[fname],d["vector"],timeout=timeout) if fname in f2 else 0
             nb_test += 1
             total += score
         elif d["type"] == "stdout":

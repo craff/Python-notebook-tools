@@ -177,12 +177,12 @@ let get_notes exoid =
     [%rapper get_many
         {sql|SELECT @string{name},@string{firstname},@string{result}
              FROM users as u, solutions as s WHERE
-               u.userid = s.userid AND (s.userid, s.created_timestamp) IN
-                  (SELECT userid,MAX(created_timestamp) as ct FROM solutions
-                   WHERE (userid,note) IN
-                     (SELECT userid,MAX(note) FROM solutions WHERE exoid=%int{exoid}
-                     GROUP BY userid)
-                   GROUP BY userid)|sql}]
+               u.userid = s.userid AND (s.exoid,s.userid, s.created_timestamp) IN
+                  (SELECT exoid,userid,MAX(created_timestamp) as ct FROM solutions
+                   WHERE (exoid,userid,note) IN
+                     (SELECT exoid,userid,MAX(note) FROM solutions WHERE exoid=%int{exoid}
+                     GROUP BY exoid,userid)
+                   GROUP BY exoid,userid)|sql}]
   in
   let result = query ~exoid db
                >>= Caqti_lwt.or_fail |> Lwt_main.run in
