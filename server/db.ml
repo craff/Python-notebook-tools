@@ -344,6 +344,14 @@ let exo_visibility exoid visible =
   query ~exoid ~visible db
     >>= Caqti_lwt.or_fail |> Lwt_main.run
 
+let exo_name exoid name =
+  let query =
+    [%rapper execute
+        {sql|UPDATE exos SET name = %string{name} WHERE exoid=%int{exoid} AND name != %string{name} |sql}]
+  in
+  query ~exoid ~name db
+    >>= Caqti_lwt.or_fail |> Lwt_main.run
+
 let remove_exo exoid =
   let query =
     [%rapper execute

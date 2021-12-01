@@ -78,7 +78,6 @@ let exos_conf id =
   let fn (id,time,name,fname,visible) =
     let exoid = string_of_int id in
     let time = Util.string_of_time time in
-    let dt = [Html.txt (name ^ " (" ^ time ^ ")")] in
     let py_url = href ("download?exoid="^exoid^"&type=question_py") in
     let ipynb_url = href ("download?exoid="^exoid^"&type=question_ipynb") in
     let cpy_url = href ("download?exoid="^exoid^"&type=corrige_py") in
@@ -108,8 +107,9 @@ let exos_conf id =
       else
         []
     in
+    let nameid = "name" ^ "_" ^ exoid in
     [%html {|
-              <label for="|}exoid{|">|}dt{|</label><br/>
+              <input type="text" name="|}nameid{|" value="|}name{|"/>(|}[Html.txt time]{|)<br/>
               <a href="|}py_url{|" download="|}(Some (fname^".py")){|">python code</a>
               <a href="|}ipynb_url{|" download="|}(Some (fname^".ipynb")){|">python notebook</a>
               <a href="|}cpy_url{|" download="|}(Some (fname^".py")){|">python corrigé</a>

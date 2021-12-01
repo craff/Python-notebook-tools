@@ -263,12 +263,21 @@ let () =
             let fn (name,value) =
               if name <> "submit" then
                 begin
-                  let exoid = int_of_string name in
-                  match value with
-                  | "visible" -> Db.exo_visibility exoid true
-                  | "hidden" -> Db.exo_visibility exoid false
-                  | "remove" -> Db.remove_exo exoid
-                  | _ -> failwith "bad form"
+                  if String.starts_with ~prefix:"name_" name then
+                    begin
+                      let len = String.length name in
+                      let exoid = int_of_string (String.sub name 5 (len - 5)) in
+                      Db.exo_name exoid value
+                    end
+                  else
+                    begin
+                      let exoid = int_of_string name in
+                      match value with
+                      | "visible" -> Db.exo_visibility exoid true
+                      | "hidden" -> Db.exo_visibility exoid false
+                      | "remove" -> Db.remove_exo exoid
+                      | _ -> failwith "bad form"
+                    end
                 end
             in
             List.iter fn query;
