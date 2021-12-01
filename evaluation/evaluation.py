@@ -2,6 +2,7 @@ import signal
 import os
 from io import StringIO
 import sys
+import tempfile
 
 def stop():
     raise SystemExit
@@ -20,34 +21,35 @@ def value_test(f1,v2,timeout=1):
 def compare_test(f1,f2,vector,timeout=1):
     total = len(vector)
     good = 0
+    tmp_name="/tmp/"+next(tempfile._get_candidate_names())
     for (args,kargs) in vector:
-        out = open("tmp.out",mode='w')
+        out = open(tmp_name,mode='w')
         try:
             sys.stdout = out
             signal.alarm(timeout)
             a1 = (1,f1(*args,*kargs))
             out.close()
-            out1 = open("tmp.out").read()
-            os.remove("tmp.out")
+            out1 = open(tmp_name).read()
+            os.remove(tmp_name)
         except:
             out.close()
-            os.remove("tmp.out")
+            os.remove(tmp_name)
             a1 = None
             out1 = None
         signal.alarm(0)
-        out = open("tmp.out",mode='w')
+        out = open(tmp_name,mode='w')
         try:
             sys.stdout = out
             signal.alarm(timeout)
             a2 = (1,f2(*args,*kargs))
             sys.stdout = sys.__stdout__
             out.close()
-            out2 = open("tmp.out").read()
-            os.remove("tmp.out")
+            out2 = open(tmp_name).read()
+            os.remove(tmp_name)
         except:
             sys.stdout = sys.__stdout__
             out.close()
-            os.remove("tmp.out")
+            os.remove(tmp_name)
             a2 = None
             out2 = None
         signal.alarm(0)
@@ -57,13 +59,11 @@ def compare_test(f1,f2,vector,timeout=1):
 evaluation_tests = []
 
 def new_value_test(test_name,test,vname,timeout=1):
-    print(evaluation_tests)
     evaluation_tests.append({ "type":"value", "vname":vname,
                               "test_name":test_name, "test":test,
                               "timeout":timeout})
 
 def new_compare_test(test_name,fname,vector=[],timeout=1):
-    print(evaluation_tests)
     ct = evaluation_tests
     d = None
     for x in ct:
@@ -84,27 +84,30 @@ def add_compare_test(d,*args,**kargs):
 def new_stdout_test(name,test):
     evaluation_tests.append({"type": "stdout", "test_name":name, "stdout_test":test})
 
-def open_file(fname,stdin=None,timeout=1):
-    f = { "new_value_test" :new_value_test,
+def open_file(fname,stdin=None,timeout=1,no_catch=False):
+    f = { "new_value_test": new_value_test,
           "new_compare_test": new_compare_test,
           "add_to_test_vector": add_to_test_vector,
           "add_compare_test": add_compare_test,
           "new_stdout_test": new_stdout_test }
-    out = open("tmp.out",mode='w')
+    tmp_name="/tmp/" + next(tempfile._get_candidate_names())
+    out = open(tmp_name,mode='w')
     sys.stdout = out
     if stdin != None:
          sys.stdin = StringIO(stdin)
-    try:
-        signal.alarm(timeout)
-        exec(open(fname).read(),f,f)
-    except:
-        pass
+    if no_catch: exec(open(fname).read(),f,f)
+    else:
+        try:
+            signal.alarm(timeout)
+            exec(open(fname).read(),f,f)
+        except:
+            pass
     signal.alarm(0)
     sys.stdin = sys.__stdin__
     sys.stdout = sys.__stdout__
     out.close()
-    out = open("tmp.out").read()
-    os.remove("tmp.out")
+    out = open(tmp_name).read()
+    os.remove(tmp_name)
     return (f,out)
 
 def print_header(tests,sep=","):
@@ -152,7 +155,7 @@ def test_all():
     correction = sys.argv[1]
     folder = sys.argv[2]
     stdin = open(sys.argv[3]).read() if len(sys.argv) > 3 else None
-    (fprof,stdout) = open_file(correction,stdin)
+    (fprof,stdout) = open_file(correction,stdin,no_catch=True)
     tests = evaluation_tests
     if os.path.isdir(folder):
         print_header(tests)
