@@ -4,4 +4,4 @@
   (name nb2py)
   (public_name nb2py)
   (modules :standard)
-  (libraries yojson))
+  (libraries yojson re))

@@ -10,7 +10,7 @@ bug-reports: "christophe@raffalli.eu"
 depends: [
   "ocaml" { >= "4.04.0" }
   "dune"  { build & >= "1.2.0" }
-  "str" "ppx_rapper" "ppx_rapper_lwt" "tiny_httpd"
+  "re" "ppx_rapper" "ppx_rapper_lwt" "tiny_httpd"
   "tyxml" "tyxml-ppx" "caqti" "caqti-driver-postgresql"
   "ppx_rapper_lwt" "yojson"
 ]

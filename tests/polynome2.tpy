@@ -4,7 +4,7 @@ from math import sqrt
 
 def solve2(a,b,c):
   """a,b,c flottants
-     resultat: unle liste de flottants
+     resultat: une liste de flottants
      solutions de a x^2 + b x + c = 0, avec la plus grande précision possible"""
   #CORRIGE
   delta = b*b - 4*a*c

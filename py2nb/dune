@@ -4,4 +4,4 @@
   (name py2nb)
   (public_name py2nb)
   (modules :standard)
-  (libraries yojson))
+  (libraries yojson re))

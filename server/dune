@@ -6,4 +6,4 @@
   (modules :standard)
   (preprocess (pps tyxml-ppx ppx_rapper))
   (libraries tiny_httpd tyxml caqti caqti-lwt ppx_rapper_lwt ppx_rapper.runtime
-             caqti-driver-postgresql str))
+             caqti-driver-postgresql re))

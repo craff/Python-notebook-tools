@@ -28,3 +28,4 @@ install: all
 	sudo ${DUNE} install --prefix=${PREFIX}
 	sudo install -d ${PREFIX}/lib/pynotebooktools/
 	sudo install evaluation/evaluation.py ${PREFIX}/lib/pynbtools/
+	sudo su pynbtools -c 'docker build -t python-eval . -f docker/python.yml'

@@ -10,27 +10,49 @@ let last_line str =
   let ln = if ln = len - 1 then String.rindex_from str (ln-2) '\n' else ln in
   String.sub str (ln+1) (len - ln - 1)
 
+(* Decoding of multipart encoded post forms according to rfc7578 *)
+type multipart_part =
+  { disposition : string
+  ; mime_type   : string option
+  ; charset     : string option
+  ; filename    : string option
+  ; content     : string }
+
+let regexp str = Re.Posix.(compile (re str))
+
+let content_disposition_regexp =
+  regexp "Content-Disposition: ([^;\r\n]*)(;[ ]*)?([^\r\n]*)"
+
+let content_type_regexp =
+  regexp "Content-Type: ([^\r\n]*)(;[ ]*charset=([^ \n\r]+))?"
+
+let empty_line_re =
+  regexp "\r?\n\r?\n"
+
 let decode_parts str =
   try
-    let _ = Str.(search_forward (regexp "\r?\n\r?\n") str 0) in
-    let header = String.sub str 0 Str.(match_beginning ()) in
-    let fin = Str.(match_end ()) in
+    Printf.eprintf "coucou 0\n%!";
+    let grps =
+      Re.exec empty_line_re str
+    in
+    Printf.eprintf "coucou 1\n%!";
+    let header_end = Re.Group.start grps 0 in
+    let content_begin = Re.Group.stop grps 0 in
+    Printf.eprintf "coucou 2\n%!";
+    let header = String.sub str 0 header_end in
     let len = String.length str in
     let rm = if str.[len-1] = '\n' then
                if str.[len-2] = '\r' then 2 else 1 else 0
     in
-    let len = len - fin - rm in
-    let content = String.sub str fin len in
-    let open Str in
-    let content_disposition_regexp =
-      regexp "Content-Disposition: \\([^;\r\n]*\\)\\(;[ ]*\\)?\\([^\r\n]*\\)"
+    let len = len - content_begin - rm in
+    let content = String.sub str content_begin len in
+    let grps =
+      Re.exec content_disposition_regexp header
     in
-    let content_type_regexp =
-      regexp "Content-Type: \\([^\r\n]*\\)"
-    in
-    let _ = search_forward content_disposition_regexp header 0 in
-    let disposition = matched_group 1 header in
-    let values = matched_group 3 header in
+    Printf.eprintf "coucou 3\n%!";
+    let disposition = Re.Group.get grps 1 in
+    let values = Re.Group.get grps 3 in
+    Printf.eprintf "coucou 4\n%!";
     let values =
       match Tiny_httpd_util.parse_query values with
       | Ok l -> List.map (fun (k,v) ->
@@ -46,20 +68,41 @@ let decode_parts str =
                     (k,v)) l
       | _ -> []
     in
-    let mime_type =
+    let (mime_type, charset) =
       try
-        let _ = search_forward content_type_regexp header 0 in
-        Some (matched_group 1 header)
-      with
-        Not_found -> None
+        Printf.eprintf "coucou A %S %S\n%!" header content;
+        let grps = Re.exec content_type_regexp header in
+        Printf.eprintf "coucou 5\n%!";
+        let mime_type = Re.Group.get_opt grps 1 in
+        let charset = Re.Group.get_opt grps 3 in
+        (mime_type, charset)
+      with Not_found ->
+        None, None
     in
-    Some(disposition, mime_type, values, content)
+    Printf.eprintf "coucou 6\n%!";
+    let name = List.assoc "name" values in
+    let filename =
+      try Tiny_httpd_util.percent_decode (List.assoc "filename" values)
+      with Not_found -> None
+    in
+    Some(name,{disposition; mime_type; charset; filename; content})
   with Not_found -> None
 
 let decode_multipart str =
   let sep = first_line str in
-  let parts = Str.(split (regexp (sep ^ "\\(--\\)?\r?\n")) str) in
-  List.filter_map decode_parts parts
+  let parts = Re.split (regexp (sep ^ "(--)?\r?\n")) str in
+  let res = List.filter_map decode_parts parts in
+  let default_charset, res =
+    List.partition (fun (name,_) -> name = "_charset_") res
+  in
+  match default_charset with
+  | (_,{content=charset; _})::_ ->
+     List.map (function
+           (name, part as c) ->
+           if part.charset = None then
+             (name, {part with charset = Some charset})
+           else c) res
+  | [] -> res
 
 let rec new_temp_dir ?(perm=0o700) () =
   let temp_dir = Filename.get_temp_dir_name () in
@@ -85,10 +128,16 @@ let read_file fname =
   close_in ch;
   r
 
-let run_cmd cmd =
+let run_cmd cmd ?stdin ?stdout ?stderr ?jail args =
+  let cmd = Filename.quote_command cmd ?stdin ?stdout ?stderr args in
+  let cmd = match jail, Options.docker_image with
+    | Some tmpdir, Some image ->
+       Printf.sprintf "docker run -v %s:%s -w %s %s %s" tmpdir tmpdir tmpdir image cmd
+    | (None, _) | (_, None) -> cmd
+  in
   Printf.eprintf "run: %S\n%!" cmd;
   let (stdout,stdin,stderr as chs) =
-    Unix.open_process_full ("firejail --quiet " ^ cmd) (Unix.environment ())
+    Unix.open_process_full cmd (Unix.environment ())
   in
   try
     let pid = Unix.process_full_pid chs in
