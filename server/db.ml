@@ -388,9 +388,48 @@ let get_note exoid userid =
                >>= Caqti_lwt.or_fail |> Lwt_main.run in
   result
 
-let get_notes userid exoid =
-  let query =
-    [%rapper get_many
+let get_notes ?debut ?fin ?classid userid exoid =
+  let debut = match debut with
+    | None   | Some "" -> "1970-01-01T00:00:00+00:00"
+    | Some d -> d ^ "T00:00:00+00:00"
+  in
+  let fin = match fin with
+    | None   | Some "" -> "2100-01-01T00:00:00+00:00"
+    | Some d -> d ^ "T00:00:00+00:00"
+  in
+  let debut = Util.time_of_string debut in
+  let fin   = Util.time_of_string fin   in
+  match classid with
+  | None ->
+     let query =
+       [%rapper get_many
+           {sql|SELECT @string{u.name}, @string{u.firstname}, @string{c.name},
+                    @string{s.result}, @string{s.created_timestamp}, @int{s.userid}
+             FROM solutions AS s, classes AS c, users AS u, user_classes AS uc,
+                  user_classes AS pc, (
+               SELECT s.note, max(s.created_timestamp), s.userid
+               FROM solutions AS s, (
+                 SELECT max(s.note),s.userid
+                 FROM solutions AS s
+                 WHERE s.exoid = %int{exoid}
+                 AND s.created_timestamp >= %pdate{debut}
+                 AND s.created_timestamp <= %pdate{fin}
+                 GROUP BY s.userid) AS tmp
+               WHERE s.note = tmp.max AND s.userid = tmp.userid AND s.exoid=%int{exoid}
+               GROUP BY s.note, s.userid) AS tmp
+             WHERE s.exoid = %int{exoid} AND u.userid = tmp.userid AND u.userid = uc.userid
+               AND c.classid = uc.classid AND s.created_timestamp = max
+               AND c.classid = pc.classid AND pc.userid = %int{userid}
+             ORDER BY c.name, u.name, u.firstname
+            |sql}]
+     in
+     let result = query ~debut ~fin ~userid ~exoid db
+                  >>= Caqti_lwt.or_fail |> Lwt_main.run in
+     result
+  | Some classid ->
+     Printf.eprintf "%d\n%!" classid;
+     let query =
+       [%rapper get_many
         {sql|SELECT @string{u.name}, @string{u.firstname}, @string{c.name},
                     @string{s.result}, @string{s.created_timestamp}, @int{s.userid}
              FROM solutions AS s, classes AS c, users AS u, user_classes AS uc,
@@ -400,18 +439,21 @@ let get_notes userid exoid =
                  SELECT max(s.note),s.userid
                  FROM solutions AS s
                  WHERE s.exoid = %int{exoid}
+                 AND s.created_timestamp >= %pdate{debut}
+                 AND s.created_timestamp <= %pdate{fin}
                  GROUP BY s.userid) AS tmp
                WHERE s.note = tmp.max AND s.userid = tmp.userid AND s.exoid=%int{exoid}
                GROUP BY s.note, s.userid) AS tmp
              WHERE s.exoid = %int{exoid} AND u.userid = tmp.userid AND u.userid = uc.userid
                AND c.classid = uc.classid AND s.created_timestamp = max
                AND c.classid = pc.classid AND pc.userid = %int{userid}
+               AND c.classid = %int{classid}
              ORDER BY c.name, u.name, u.firstname
-        |sql}]
-  in
-  let result = query ~userid ~exoid db
-               >>= Caqti_lwt.or_fail |> Lwt_main.run in
-  result
+         |sql}]
+     in
+     let result = query ~debut ~fin ~userid ~exoid ~classid db
+                  >>= Caqti_lwt.or_fail |> Lwt_main.run in
+     result
 
 let get_latest_solution exoid userid =
   let query =

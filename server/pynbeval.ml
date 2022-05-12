@@ -355,8 +355,15 @@ let () =
     (check_session (fun req ((login,userid,_),headers) ->
           let exoid = int_of_string (List.assoc "exoid" (Request.query req)) in
           let exoname = List.assoc "exoname" (Request.query req) in
+          let classid =  List.assoc_opt "classid" (Request.query req) in
+          let classid = match classid
+            with | None | Some "" -> None
+                 | Some s -> Some (int_of_string s)
+          in
+          let debut =  List.assoc_opt "debut" (Request.query req) in
+          let fin =  List.assoc_opt "fin" (Request.query req) in
           Response.make_string ~headers
-            (Pages.show_notes login userid exoid exoname))
+            (Pages.show_notes login ?debut ?fin ?classid userid exoid exoname))
     );
 
   add_route_handler server

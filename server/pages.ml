@@ -647,8 +647,8 @@ let manage_exos id =
     let show_notes =
       if Db.has_solution id then
         begin
-          let show_url = Printf.sprintf "show_notes?exoid=%s&exoname=%s"
-                           exoid (Tiny_httpd_util.percent_encode name)
+          let show_url = href (Printf.sprintf "show_notes?exoid=%s&exoname=%s"
+                           exoid (Tiny_httpd_util.percent_encode name))
           in
           [[%html {|<a href="|}show_url{|">voir les notes</a>|}]]
         end
@@ -689,9 +689,9 @@ let manage_exos id =
   onglet ~visible:false "Visibilité et suppression des exercices"
   [[%html {|<table class="fill"><tbody>|}exos_form{|</tbody></table>|}]]
 
-let show_notes login userid exoid exoname =
+let show_notes login ?debut ?fin ?classid userid exoid exoname =
   let (_,_,fname,_) = Db.get_exo_by_id exoid in
-  let notes = Db.get_notes userid exoid in
+  let notes = Db.get_notes ?debut ?fin ?classid userid exoid in
   let headers = ref [] in
   let exoid = string_of_int exoid in
   let fn (name,firstname,classe,result,time,userid) =
@@ -719,17 +719,56 @@ let show_notes login userid exoid exoname =
         </td>|}]
     in
     [%html {|<tr><td>|}[Html.txt classe]{|</td><td>|}[Html.txt name]{|</td>
-             <td>|}[Html.txt firstname]{|</td>|}(l @ [u]){|</tr>|}]
+             <td>|}[Html.txt firstname]{|</td>
+             <td>|}[Html.txt time]{|</td>|}(l @ [u]){|</tr>|}]
   in
   let notes = List.map fn notes in
-  let headers = "Classe" :: "Nom" :: "Prénom" :: !headers @ ["Link"] in
+  let headers = "Classe" :: "Nom" :: "Prénom" :: "Date/Time" ::  !headers @ ["Link"] in
   let headers = List.map (fun s -> [%html {|<th>|}[Html.txt s]{|</th>|}]) headers in
+  let classe_menu =
+    let classes = Db.all_classes () in
+    let fn (name,cid) =
+      if classid = Some cid then
+        [%html {|<option value="|}(string_of_int cid){|" selected>|}
+            (Html.txt name){|</option>|}]
+      else
+        [%html {|<option value="|}(string_of_int cid){|">|}
+            (Html.txt name){|</option>|}]
+    in
+    let options = List.map fn classes in
+    [%html
+      {|<label for="classid">Classe:</label>
+        <select name="classid" id="classid">
+        <option value="">Toutes</option>
+        |}options{|
+        </select>|}]
+  in
+  let debut_html = match debut with
+    | None -> [%html{|<input type="date" name="debut" id="debut"/>|}]
+    | Some d -> [%html{|<input type="date" name="debut" value="|}d{|" id="debut"/>|}]
+  in
+  let fin_html = match fin with
+    | None -> [%html{|<input type="date" name="fin" id="fin"/>|}]
+    | Some d -> [%html{|<input type="date" name="fin" value="|}d{|" id="fin"/>|}]
+  in
   let html =
     [%html
        (header login)
         {|<h3>Notes de l'exercice «|}[Html.txt exoname]{|»</h3>
           <div class="center">
-            <table class="table"><tr>|}headers{|</tr>|}notes{|</table></div>|}]
+          <form method="Get" action="|}(href "show_notes"){|">
+            <input type="hidden" name="exoid" value="|}exoid{|"/>
+            <input type="hidden" name="exoname" value="|}exoname{|"/>
+            <label for="debut">début:</label>
+              |}[debut_html]{|
+            <label for="fin">fin:</label>
+              |}(fin_html ::
+            classe_menu){|
+            <input type="submit" name="submit" value="filtrer"/>
+          </form>
+          </div>
+          <div class="center">
+          <table class="table"><tr>|}headers{|</tr>|}notes{|</table></div>|}]
   in
   Ok (html_wrapper html)
 

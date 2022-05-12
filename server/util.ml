@@ -156,3 +156,9 @@ let run_cmd cmd ?stdin ?stdout ?stderr ?jail args =
 let string_of_time time =
   let ((y,n,d),((h,m,s),_)) = Ptime.to_date_time ~tz_offset_s:Options.tz time in
   Printf.sprintf "%d/%d/%d, %d:%d:%d" d n y h m s
+
+let time_of_string str =
+  Printf.eprintf "%S\n%!" str;
+  match Ptime.of_rfc3339 str with
+  | Ok (r,_,_) -> r
+  | Error _ -> failwith "time_of_string"
