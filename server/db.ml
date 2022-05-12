@@ -415,11 +415,17 @@ let get_notes ?debut ?fin ?classid userid exoid =
                  AND s.created_timestamp >= %pdate{debut}
                  AND s.created_timestamp <= %pdate{fin}
                  GROUP BY s.userid) AS tmp
-               WHERE s.note = tmp.max AND s.userid = tmp.userid AND s.exoid=%int{exoid}
+               WHERE s.note = tmp.max AND s.userid = tmp.userid
+                 AND s.exoid=%int{exoid}
+                 AND s.created_timestamp >= %pdate{debut}
+                 AND s.created_timestamp <= %pdate{fin}
                GROUP BY s.note, s.userid) AS tmp
-             WHERE s.exoid = %int{exoid} AND u.userid = tmp.userid AND u.userid = uc.userid
+             WHERE s.exoid = %int{exoid} AND u.userid = tmp.userid
+               AND u.userid = uc.userid
                AND c.classid = uc.classid AND s.created_timestamp = max
                AND c.classid = pc.classid AND pc.userid = %int{userid}
+               AND s.created_timestamp >= %pdate{debut}
+               AND s.created_timestamp <= %pdate{fin}
              ORDER BY c.name, u.name, u.firstname
             |sql}]
      in
