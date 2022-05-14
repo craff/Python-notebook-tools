@@ -662,8 +662,6 @@ let change_user_firstname query =
 let change_user_password query =
   let userid = int_of_string (List.assoc "userid" query) in
   let password = Digest.(to_hex (string (List.assoc "password" query))) in
-  let password2 = Digest.(to_hex (string (List.assoc "password2" query))) in
-  if password <> password2 then failwith "Password mismatch";
   let query =
     [%rapper execute
         {sql|UPDATE users SET password = %string{password} WHERE userid=%int{userid} |sql}]
