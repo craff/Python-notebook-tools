@@ -22,13 +22,15 @@ let usage = Printf.sprintf "usage: %s files ..." Sys.argv.(0)
 
 let _ = Arg.parse spec anon_fun usage
 
-type out  = All | Corrige | Question | Test | Comment
+type out  = All | Corrige | Correll | Question | Test | Comment
 
 let compat mode cur = match (mode, cur) with
   | _       , All      -> true
   | Question, Question -> true
   | Corrige , Corrige  -> true
+  | Corrige , Correll  -> true
   | Test    , Corrige  -> true
+  | Test    , Correll  -> true
   | Test    , Test     -> true
   | _       , _        -> false
 
@@ -77,7 +79,7 @@ let json_string_list l =
   fn [] true l
 
 let input_re =
-  Re.Posix.(compile (re {|<((input)|(select)|(text_area)) ([^/]|(/[^>]))*name="([a-zA-Z0-9_]+)"([^/]|(/[^>]))*/>|}))
+  Re.Posix.(compile (re {|<((input)|(select)|(textarea)) ([^/]|(/[^>]))*name="([a-zA-Z0-9_]+)"([^/]|(/[^>]))*/>|}))
 
 let output_python ch userdata nb_name cells =
   let gn (s1, s2) = (s1, Basic.from_string s2) in
@@ -213,6 +215,13 @@ let treat_file out_mode fname =
               if !cur != All then
                 badPython (Printf.sprintf "line %d: bad #CORRIGE" !line_num);
               cur := Corrige
+            end
+          else if starts_with ~prefix:"#CORRELL" line then
+            begin
+              flush_md ();
+              if !cur != All then
+                badPython (Printf.sprintf "line %d: bad #CORRELL" !line_num);
+              cur := Correll
             end
           else if starts_with ~prefix:"#TEST" line then
             begin

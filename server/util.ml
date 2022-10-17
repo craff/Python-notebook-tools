@@ -31,14 +31,11 @@ let empty_line_re =
 
 let decode_parts str =
   try
-    Printf.eprintf "coucou 0\n%!";
     let grps =
       Re.exec empty_line_re str
     in
-    Printf.eprintf "coucou 1\n%!";
     let header_end = Re.Group.start grps 0 in
     let content_begin = Re.Group.stop grps 0 in
-    Printf.eprintf "coucou 2\n%!";
     let header = String.sub str 0 header_end in
     let len = String.length str in
     let rm = if str.[len-1] = '\n' then
@@ -49,10 +46,8 @@ let decode_parts str =
     let grps =
       Re.exec content_disposition_regexp header
     in
-    Printf.eprintf "coucou 3\n%!";
     let disposition = Re.Group.get grps 1 in
     let values = Re.Group.get grps 3 in
-    Printf.eprintf "coucou 4\n%!";
     let values =
       match Tiny_httpd_util.parse_query values with
       | Ok l -> List.map (fun (k,v) ->
@@ -70,16 +65,13 @@ let decode_parts str =
     in
     let (mime_type, charset) =
       try
-        Printf.eprintf "coucou A %S %S\n%!" header content;
         let grps = Re.exec content_type_regexp header in
-        Printf.eprintf "coucou 5\n%!";
         let mime_type = Re.Group.get_opt grps 1 in
         let charset = Re.Group.get_opt grps 3 in
         (mime_type, charset)
       with Not_found ->
         None, None
     in
-    Printf.eprintf "coucou 6\n%!";
     let name = List.assoc "name" values in
     let filename =
       try Tiny_httpd_util.percent_decode (List.assoc "filename" values)

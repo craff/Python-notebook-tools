@@ -239,8 +239,16 @@ let add_solution headers userid exoid fname solution =
 
     Db.record_solution userid exoid solution note result;
     let _ = Sys.command ("rm -rf "^dirname) in
-    let url = "show_solution?exoid=" ^ string_of_int exoid in
-    redirect ~headers url
+    let html =
+      let open Tyxml in
+        Pages.html_wrapper [%html {|
+          Évaluation de l'exercice: |}[Html.txt fname]{|<br/>
+          <pre>|}[Html.txt result]{|</pre>|}]
+    in
+    (* TODO: remove dirname if this form is not submitted after some time ?
+       If user leaves that page? Both?
+    *)
+    Response.make_string ~headers (Ok html)
   with
     e ->
     let _ = Sys.command ("rm -rf "^dirname) in
@@ -447,11 +455,9 @@ let () =
     (check_session (fun req ((_,userid,_),headers) ->
        let open Util in
        let parts = decode_multipart req.Request.body in
-       Printf.eprintf "decode OK\n%!";
        let exoid = ref (-1) in
        let solution = ref None in
        let fn (name, {filename; content; _}) =
-         Printf.eprintf "scan: %s %s\n%!" name content;
          match name with
          | "solution" ->
             let fname = match filename with
@@ -465,12 +471,10 @@ let () =
          | _ -> failwith "bad form"
        in
        List.iter fn parts;
-       Printf.eprintf "scan OK\n%!";
        let fname, content = match !solution with
          | None -> failwith "bad form"
          | Some c -> c
        in
-       Printf.eprintf "fname and content OK\n%!";
        add_solution headers userid !exoid fname content));
 
   add_route_handler server
