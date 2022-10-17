@@ -1,0 +1,7 @@
+FROM python:latest
+
+RUN pip install numpy sympy matplotlib pillow requests
+
+RUN mkdir /usr/local/lib/pynbtools
+
+COPY ./evaluation/evaluation.py /usr/local/lib/pynbtools/
