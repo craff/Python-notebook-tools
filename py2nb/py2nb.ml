@@ -4,7 +4,6 @@ exception BadPython of string
 let badPython s = raise (BadPython s)
 
 let files = ref []
-let markdown = ref true
 let do_corrige  = ref true
 let do_question = ref true
 let do_test     = ref true
@@ -22,15 +21,17 @@ let usage = Printf.sprintf "usage: %s files ..." Sys.argv.(0)
 
 let _ = Arg.parse spec anon_fun usage
 
-type out  = All | Corrige | Correll | Question | Test | Comment
+type out  = All | Corrige | Correll | Corrcom | Question | Test | Comment
 
 let compat mode cur = match (mode, cur) with
   | _       , All      -> true
   | Question, Question -> true
   | Corrige , Corrige  -> true
   | Corrige , Correll  -> true
+  | Corrige , Corrcom  -> true
   | Test    , Corrige  -> true
   | Test    , Correll  -> true
+  | Test    , Corrcom  -> true
   | Test    , Test     -> true
   | _       , _        -> false
 
@@ -38,6 +39,30 @@ type cell_source =
   | Markdown of string list
   | Code     of string list
   | None
+
+let ellipsys line lines =
+  if String.trim line = "" then line :: lines else
+  let white line =
+    let i = ref 0 in
+    while !i < String.length line && (line.[!i] = ' ' || line.[!i] = '\t') do
+      incr i
+    done;
+    !i
+  in
+  let rec no_ell ls =
+    match ls with
+    | [] -> true
+    | ""::ls -> no_ell ls
+    | l :: _ ->
+       let p = white l in
+       String.length l < p + 3 || String.sub l p 3 <> "..."
+  in
+  match lines with
+  | [] ->
+     (String.sub line 0 (white line) ^ "...") :: lines
+  | ls when no_ell ls ->
+     (String.sub line 0 (white line) ^ "...") :: lines
+  | _ -> lines
 
 type cell = cell_source * (string * string) list
 
@@ -78,22 +103,25 @@ let json_string_list l =
   in
   fn [] true l
 
+(*
 let input_re =
   Re.Posix.(compile (re {|<((input)|(select)|(textarea)) ([^/]|(/[^>]))*name="([a-zA-Z0-9_]+)"([^/]|(/[^>]))*/>|}))
+ *)
 
 let output_python ch userdata nb_name cells =
   let gn (s1, s2) = (s1, Basic.from_string s2) in
   let fn (c,m) : Basic.t =
-    let m : Basic.t = `Assoc (List.map gn m) in
+    let m = ("deletable",`Bool false) :: List.map gn m in
     match c with
     | Code l ->
        let src : Basic.t list = json_string_list l in
        `Assoc [ "cell_type", `String "code"
               ; "source", `List src
               ; "execution_count", `Null
-              ; "metadata", m
+              ; "metadata", `Assoc m
               ; "outputs", `List [] ]
     | Markdown l ->
+       let m = ("editable",`Bool false) :: m in
        let src : Basic.t list = json_string_list l in
 (*       let src_total = String.concat " " l in
        let inputs = Re.all input_re src_total in
@@ -104,7 +132,7 @@ let output_python ch userdata nb_name cells =
              userdata := (k,v) :: !userdata) inputs;*)
        `Assoc [ "cell_type", `String "markdown"
               ; "source", `List src
-              ; "metadata", m ]
+              ; "metadata", `Assoc m ]
     | None -> assert false
   in
   let cells : Basic.t list = List.map fn cells in
@@ -136,6 +164,12 @@ let output_python ch userdata nb_name cells =
 
 let userdata_re =
   Re.Posix.(compile (re "[ \t]*([a-zA-Z0-9_]+)[ \t]*=[ \t]*\"([^\"]*)\"[ \t]*#USERDATA"))
+
+let start_with_test line =
+  starts_with ~prefix:"#TEST" line ||
+    try
+      Scanf.sscanf line "if \"TEST\" in globals () :" true
+    with _ -> false
 
 let treat_file out_mode fname =
   try
@@ -223,7 +257,14 @@ let treat_file out_mode fname =
                 badPython (Printf.sprintf "line %d: bad #CORRELL" !line_num);
               cur := Correll
             end
-          else if starts_with ~prefix:"#TEST" line then
+          else if starts_with ~prefix:"#CORRCOM" line then
+            begin
+              flush_md ();
+              if !cur != All then
+                badPython (Printf.sprintf "line %d: bad #CORRCOM" !line_num);
+              cur := Corrcom
+            end
+          else if start_with_test line then
             begin
               flush_md ();
               if !cur != All then
@@ -258,6 +299,10 @@ let treat_file out_mode fname =
               let add_code line l =
                  if compat out_mode !cur then
                    mode := (Code (line :: l), snd !mode)
+                 else if out_mode = Question && !cur = Correll then
+                   mode := (Code (ellipsys line l), snd !mode)
+                 else if out_mode = Question && !cur = Corrcom then
+                   mode := (Code (("#" ^ line) :: l), snd !mode)
                  else if !cur = Comment then
                    if out_mode = Corrige || out_mode = Test then
                      mode := (Code (line :: l), snd !mode)

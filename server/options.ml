@@ -1,37 +1,27 @@
-let prefix = ref ""
-let tz = ref 0
-let port = ref 8080
-let jurl = ref "/basthon/?from="
-let self_url = ref None
-let docker_image= ref None
 
-let spec =
-  Arg.[
-      ("-p", Set_string prefix,
-       "fix the prefix of the url (no \"/\" allowed)");
-      ("-z", Set_int tz, "fix the timezone insecond");
-      ("-P", Set_int port, "the port to listen to");
-      ("-j", Set_string jurl, "jupyter/basthon url");
-      ("-i", String (fun s -> docker_image := Some s),
-       "user given docker image");
-      ("-d", Unit (fun () -> Tiny_httpd._enable_debug true),
-       "enable debug of httpd server");
-      ("-s", String (fun s -> self_url := Some s), "self url");
-  ]
+let (tz, set_tz) =
+  let tz = ref 0 in
+  (fun () -> !tz),
+  (fun x -> tz := x)
 
-let usage = Printf.sprintf "usage: %s [-]" Sys.argv.(0)
+let (docker_image, set_docker_image) =
+  let docker_image= ref None in
+  (fun () -> !docker_image),
+  (fun (i:string) -> docker_image := Some i)
 
-let anon_fun s =
-  Printf.eprintf "Dot not know what to do with %s\n%!" s;
-  exit 1
+let (docker_options, set_docker_options) =
+  let docker_options= ref [||] in
+  (fun () -> !docker_options),
+  (fun (opts:string array) -> docker_options := opts)
 
-let () = Arg.parse spec anon_fun usage
+let (top_dir, set_top_dir) =
+  let top_dir = ref "./basthon_store" in
+  (fun () -> !top_dir),
+  (fun (i:string) -> top_dir := i)
 
-let prefix = !prefix
-let tz = !tz
-let port = !port
-let jurl = !jurl
-let self_url = match !self_url with
-  | None -> prefix
-  | Some s -> s
-let docker_image = !docker_image
+let (prefix, set_prefix) =
+  let prefix = ref "pynbtools" in
+  (fun () -> !prefix),
+  (fun p -> prefix := p)
+
+let jurl () = Printf.sprintf "/%s/basthon/index.html?from=" (prefix ())

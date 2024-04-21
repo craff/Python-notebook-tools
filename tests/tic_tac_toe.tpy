@@ -104,21 +104,21 @@ add_to_test_vector(vector,grille_test_ligne)
 add_to_test_vector(vector,grille_test_colonne)
 add_to_test_vector(vector,grille_test_diagonale)
 grille0 =  [
- [' ', ' ', ' '],
- [' ', ' ', ' '],
- [' ', ' ', ' ']
+   [' ', ' ', ' '],
+   [' ', ' ', ' '],
+   [' ', ' ', ' ']
 ]
 add_to_test_vector(vector,grille0)
 grille1 =  [
- [' ', 'X', ' '],
- [' ', 'X', ' '],
- [' ', 'X', ' ']
+   [' ', 'X', ' '],
+   [' ', 'X', ' '],
+   [' ', 'X', ' ']
 ]
 add_to_test_vector(vector,grille1)
 grille2 =  [
- [' ', ' ', ' '],
- ['O', 'O', 'O'],
- [' ', ' ', ' ']
+   [' ', ' ', ' '],
+   ['O', 'O', 'O'],
+   [' ', ' ', ' ']
 ]
 add_to_test_vector(vector,grille2)
 
@@ -295,14 +295,14 @@ def joue_coup(joueur,position,grille):
 
 #TEST
 def test(joue):
-    for n in range(0,9):
-        g = [ l.copy() for l in grille0 ]
-        joue('W',n,g)
-        for i in range(0,3):
-            for j in range(0,3):
-                expected = 'W' if 3*i + j == n else ' '
-                if g[i][j] != expected: return False
-    return True
+   for n in range(0,9):
+      g = [ l.copy() for l in grille0 ]
+      joue('W',n,g)
+      for i in range(0,3):
+         for j in range(0,3):
+            expected = 'W' if 3*i + j == n else ' '
+         if g[i][j] != expected: return False
+   return True
 new_value_test("7", test, "joue_coup")
 #FIN
 
@@ -334,7 +334,7 @@ gagnant = ' '
 while nb_coups < 9:
 #FIN
 #QUESTION
-while False: # Mettez le bon test
+#while False: # Mettez le bon test
 #FIN
     # On affiche la grille
     print("la grille:")

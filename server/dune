@@ -1,9 +1,34 @@
 (include_subdirs unqualified)
 
-(executable
-  (name pynbeval)
-  (public_name pynbeval_server)
-  (modules :standard)
-  (preprocess (pps tyxml-ppx ppx_rapper))
-  (libraries tiny_httpd tyxml caqti caqti-lwt ppx_rapper_lwt ppx_rapper.runtime
+; produce an embedded FS for basthon
+(rule
+  (targets basthon.ml)
+  (deps (source_tree ./basthon) domain.crt domain.key)
+  (action (run vfs_pack -o %{targets}
+               --max-size=4096
+	       --destination=/home/raffalli/Programming/pynotebook/basthon_store
+	       --mirror=/home/raffalli/Programming/pynotebook/basthon
+               )))
+
+(library
+  (name pynbtools)
+  (public_name pynbtools)
+  (modules myUtil options db pages basthon pynbtools)
+  (preprocess
+    (per_module
+	((action (run %{bin:chaml} %{input-file})) pages pynbtools)
+        ((pps ppx_rapper) db)))
+  (libraries simple_httpd caqti simple_httpd.caqti ppx_rapper ppx_rapper.runtime
              caqti-driver-postgresql re))
+
+(executable
+  (name main)
+  (modules main)
+  (libraries simple_httpd caqti ppx_rapper
+             caqti-driver-postgresql re pynbtools))
+
+(rule
+  (targets domain.crt domain.key)
+  (enabled_if (= %{system} "linux"))
+  (action
+    (bash "openssl req -newkey rsa:2048 -keyout domain.key -x509 -days 365 -out domain.crt -nodes -subj '/C=/ST=/L=/O=/CN=localhost' 2> /dev/null")))

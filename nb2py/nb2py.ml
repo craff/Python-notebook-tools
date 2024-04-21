@@ -59,6 +59,9 @@ let treat_cell lines out json =
     let src = List.flatten (List.map (String.split_on_char '\n') src) in
     (ty, metadata, src)
   in
+  lines := List.rev_append (List.map (fun (k,v) ->
+                                let v = Basic.to_string v in
+                                Printf.sprintf "#$ %s: %s" k v) metadata) !lines;
   match ty with
   | Code ->
      lines := List.rev_append src !lines;
@@ -69,9 +72,6 @@ let treat_cell lines out json =
      List.iter (fun g ->
          Printf.fprintf out "%s\n%!" (String.trim (Re.Group.get g 1)))
        eval_inline;
-     lines := List.rev_append (List.map (fun (k,v) ->
-                                   let v = Basic.to_string v in
-                                   Printf.sprintf "#$ %s: %s" k v) metadata) !lines;
      lines := List.rev_append (List.map (Printf.sprintf "## %s") src) !lines;
      lines := "" :: !lines;
   | Markdown -> ()

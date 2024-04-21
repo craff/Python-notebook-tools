@@ -3,7 +3,8 @@ DUNE = $(shell opam var bin)/dune
 PREFIX = /usr/local
 
 all:
-	dune build
+	dune build @install
+
 
 clean:
 	dune clean
@@ -24,8 +25,10 @@ tests: all
 	python3 evaluation/evaluation.py tests/polynome2_test.py tests/tmp2
 	python3 evaluation/evaluation.py tests/good.py tests/to_test
 
-install: all
-	sudo ${DUNE} install --prefix=${PREFIX}
-	sudo install -d ${PREFIX}/lib/pynotebooktools/
-	sudo install evaluation/evaluation.py ${PREFIX}/lib/pynbtools/
-	sudo su pynbtools -c 'docker build -t python-eval . -f docker/python.yml'
+.PHONY: docker
+docker:
+	cp evaluation/evaluation.py docker/
+	#cd docker && sudo su pynbtools -c 'docker build -t python-eval . -f python.yml'
+
+install: all docker
+	dune install

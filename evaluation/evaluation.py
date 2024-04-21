@@ -27,7 +27,8 @@ def value_test(f1,*v2,timeout=0.2):
         note = 0
     return(note)
 
-def compare_test(f1,f2,vector,timeout=0.2):
+def compare_test(f1,f2,vector,compare_args=False,timeout=0.2):
+    from copy import deepcopy as cp
     total = len(vector)
     good = 0
     for (args,kargs) in vector:
@@ -36,7 +37,8 @@ def compare_test(f1,f2,vector,timeout=0.2):
         try:
             sys.stdout = out
             set_alarm(timeout)
-            a1 = (1,f1(*args,*kargs))
+            args0 = cp(args); kargs0 = cp(kargs)
+            a1 = (1,f1(*args0,*kargs0))
             rm_alarm()
             out.close()
             out1 = open(tmp_name).read()
@@ -52,11 +54,15 @@ def compare_test(f1,f2,vector,timeout=0.2):
         try:
             sys.stdout = out
             set_alarm(timeout)
-            a2 = (1,f2(*args,*kargs))
+            args1 = cp(args); kargs1 = cp(kargs)
+            a2 = (1,f2(*args1,*kargs1))
             rm_alarm()
             sys.stdout = sys.__stdout__
             out.close()
             out2 = open(tmp_name).read()
+            if a1 == a2 and out1 == out2 and (not compare_args or
+                                              (args0 == args1 and kargs0 == kargs1)):
+                good += 1
             os.remove(tmp_name)
         except:
             rm_alarm()
@@ -65,17 +71,16 @@ def compare_test(f1,f2,vector,timeout=0.2):
             os.remove(tmp_name)
             a2 = None
             out2 = None
-        if a1 == a2 and out1 == out2: good += 1
     return(good/total)
 
 evaluation_tests = []
 
-def new_value_test(test_name,test,*vname,timeout=0.2):
+def new_value_test(test_name,test,*vname,timeout=0.2,coef=1):
     evaluation_tests.append({ "type":"value", "vname":vname,
                               "test_name":test_name, "test":test,
-                              "timeout":timeout})
+                              "timeout":timeout, "coef":coef})
 
-def new_compare_test(test_name,fname,vector=[],timeout=0.2):
+def new_compare_test(test_name,fname,vector=[],compare_args=False,timeout=0.2,coef=1):
     ct = evaluation_tests
     d = None
     for x in ct:
@@ -83,7 +88,7 @@ def new_compare_test(test_name,fname,vector=[],timeout=0.2):
             d = x["fname"]
             break
     if d == None:
-        d = { "type":"compare", "test_name":test_name,"fname":fname, "timeout":timeout, "vector":vector }
+        d = { "type":"compare", "test_name":test_name,"fname":fname, "timeout":timeout, "vector":vector,"compare_args":compare_args,"coef":1 }
         ct.append(d)
     return(d)
 
@@ -93,8 +98,8 @@ def add_to_test_vector(vector,*args,**kargs):
 def add_compare_test(d,*args,**kargs):
     add_to_test_vector(d["vector"],*args,**kargs)
 
-def new_stdout_test(name,test):
-    evaluation_tests.append({"type": "stdout", "test_name":name, "stdout_test":test})
+def new_stdout_test(name,test,coef=1):
+    evaluation_tests.append({"type": "stdout", "test_name":name, "stdout_test":test,"coef":1})
 
 def get_seed(fname):
     first_line = open(fname).readline()
@@ -107,6 +112,7 @@ def open_file(fname,stdin=None,timeout=0.5,no_catch=False,seed=0):
           "add_to_test_vector": add_to_test_vector,
           "add_compare_test": add_compare_test,
           "new_stdout_test": new_stdout_test,
+          "TEST": True,
           "seed": seed}
     tmp_name="/tmp/" + next(tempfile._get_candidate_names())+"_pynbeval.txt"
     out = open(tmp_name,mode='w')
@@ -132,6 +138,15 @@ def open_file(fname,stdin=None,timeout=0.5,no_catch=False,seed=0):
     os.remove(tmp_name)
     return (f,out) if ok else None
 
+def access(f,name):
+    names = name.split(".")
+    if names[0] not in f: return None
+    r = f[names[0]]
+    for i in range(1,len(names)):
+        if not hasattr(r,names[i]): return None
+        r = getattr(r,names[i])
+    return r
+
 def print_header(tests,sep=","):
     sep=""
     for d in tests:
@@ -149,29 +164,31 @@ def test_file(fprof,multi,tests,file,stdout,stdin=None,seed=0):
     (f2,out2) = res
     sep = ""
     for d in tests:
-
+        coef = d["coef"]
         if d["type"] == "value":
             test = d["test"]
             vname = d["vname"]
             timeout = d["timeout"] if "timeout" in d else 1
-            vals = [f2[name] if name in f2 else None for name in vname]
+            vals = [access(f2,name) for name in vname]
             score = value_test(test,*vals,timeout=timeout)
             if type(score) == bool:
                 score = 1 if score else 0
-            nb_test += 1
-            total += score
+            nb_test += coef
+            total += score * coef
         elif d["type"] == "compare":
             fname = d["fname"]
             timeout = d["timeout"] if "timeout" in d else 1
-            score = compare_test(fprof[fname],f2[fname],d["vector"],timeout=timeout) if fname in f2 else 0
-            nb_test += 1
-            total += score
+            compare_args = d["compare_args"] if "compare_args" in d else False
+            score = compare_test(access(fprof,fname),access(f2,fname),d["vector"],
+                                 compare_args=compare_args,timeout=timeout)
+            nb_test += coef
+            total += score * coef
         elif d["type"] == "stdout":
             score = stdout_test(stdout,out2)
             if type(score) == bool:
                 score = 1 if score else 0
-            nb_test += 1
-            total += score
+            nb_test += coef
+            total += score * coef
         if multi: print(sep,pf(score), end="")
         else: print(d["test_name"],":",pf(score))
         sep=","
