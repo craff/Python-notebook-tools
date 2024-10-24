@@ -106,7 +106,7 @@ def get_seed(fname):
     if first_line[0:6] == "#SEED:":
         return(int(first_line[6:]))
 
-def open_file(fname,stdin=None,timeout=0.5,no_catch=False,seed=0):
+def open_file(fname,stdin=None,timeout=10,no_catch=False,seed=0):
     f = { "new_value_test": new_value_test,
           "new_compare_test": new_compare_test,
           "add_to_test_vector": add_to_test_vector,
@@ -157,7 +157,7 @@ def print_header(tests,sep=","):
 def test_file(fprof,multi,tests,file,stdout,stdin=None,seed=0):
     nb_test = 0
     total = 0
-    res = open_file(file,stdin,timeout=10.0,seed=seed)
+    res = open_file(file,stdin,timeout=30.0,seed=seed)
     if res == None:
         print("Error")
         return
@@ -201,7 +201,7 @@ def test_all():
     file = sys.argv[2]
     stdin = open(sys.argv[3]).read() if len(sys.argv) > 3 and len(sys.argv[3]) > 0 else None
     seed = get_seed(file)
-    (fprof,stdout) = open_file(correction,stdin,no_catch=True,timeout=10.0,seed=seed)
+    (fprof,stdout) = open_file(correction,stdin,no_catch=True,timeout=30.0,seed=seed)
     tests = evaluation_tests
     test_file(fprof,False,tests,file,stdout,stdin,seed=seed)
 

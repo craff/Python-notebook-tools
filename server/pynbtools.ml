@@ -408,7 +408,7 @@ module Make(Init: Host.Init) = struct
       let _ = Db.change_exo_name query req in
       resptrue)
 
-  let _ = Init.add_route_handler ~filter:(filter Db.Role.Prof)
+  let _ = Init.add_route_handler ~filter:(filter Db.Role.Prof) ~meth:Method.POST
     (pexact "change_exo_visibility")
     (fun req ->
        let query = Request.query req in

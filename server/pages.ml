@@ -152,6 +152,11 @@ let css =
      padding-top:0px;
      padding-bottom:0px;
    }
+   .attention {
+     margin-left:10%;
+     margin-right:10%;
+     text-align:justify;
+   }
    body {
      background-color: #D0D0FF;
      margin: 0;
@@ -427,6 +432,7 @@ let scripts () =
 	   return(false);
        }
        request_alert("Le changement", "change_user_password", f);
+       return false;
    }
    function ignore_enter(event) {
      var x = event.which;
@@ -486,7 +492,7 @@ let create_user is_admin req =
   onglet ~visible:(not is_admin) "Inscription au site"
     {html|
       <div class="center">
-      <form name="new_user" method="Post" action="javascript:void(0);"
+      <form name="new_user" action="javascript:void(0);"
             onsubmit=<?=onsubmit?>>
       <table class="fill"><tr><td>
        <label for="login">Identifiant:</label>
@@ -531,7 +537,7 @@ let user_classes userid req =
 
     in
     {html|
-      <form name=<?=form_name?> style="display: inline;">
+      <form name=<?=form_name?> style="display: inline;" method="Post">
        <input type="hidden" name="classid" value=<?=string_of_int classid?>/>
        <input type="hidden" name="userid" value=<?=string_of_int userid?>/>
        <span class="cl-item"><label for="is_in"><?=name?></label>
@@ -555,7 +561,7 @@ let courses_classes courseid req =
 
     in
     {html|
-      <form name=<?=form_name?> style="display: inline;">
+      <form name=<?=form_name?> style="display: inline;" method="Post">
        <input type="hidden" name="classid" value=<?=string_of_int classid?>/>
        <input type="hidden" name="courseid" value=<?=string_of_int courseid?>/>
        <span class="cl-item"><label for="is_in"><?=name?></label>
@@ -573,7 +579,7 @@ let manage_users admin req =
     let form_password = "password_" ^ suserid in
     let onchange_name = "change_user_name('"^form_name^"');" in
     let onchange_firstname = "change_user_firstname('"^form_firstname^"');" in
-    let onclick_pwd = "change_user_password('"^form_password^"');" in
+    let onsubmit_pwd = "change_user_password('"^form_password^"');" in
 
     {html|
        <tr>
@@ -582,7 +588,7 @@ let manage_users admin req =
           <td style="text-align:right;">
           <label for="name">Nom:</label></td>
           <td style="text-align:left;">
-             <form id=<?=form_name?>>
+             <form id=<?=form_name?> method="Post">
                <input type="hidden" name="userid" value=<?=suserid?>/>
                <input type="text" name="name" id="name" value=<?=name?>
                       onchange=<?=onchange_name?>/>
@@ -594,7 +600,7 @@ let manage_users admin req =
           <td style="text-align:right;">
           <label for="firstname">Prénom:</label></td>
           <td>
-             <form id=<?=form_firstname?>>
+             <form id=<?=form_firstname?> method="Post">
                 <input type="hidden" name="userid" value=<?=suserid?>/>
                 <input type="text" name="firstname" id="firstname" value=<?=firstname?>
                       onchange=<?=onchange_firstname?>/>
@@ -607,11 +613,11 @@ onfocus="this.removeAttribute('readonly');"/></td>
        <td style="text-align:right; padding-left:0;"><input size="10" form=<?=form_password?> type="password" name="password2" autocomplete="off" readonly
 onfocus="this.removeAttribute('readonly');"/></td>
        <td style="text-align:left;">
-          <form id=<?=form_password?>>
+     <form id=<?=form_password?> action="javascript:void(0);"
+                 onsubmit=<?=onsubmit_pwd?>>
             <input type="hidden" name="userid" value=<?=suserid?>/>
             <input type="submit" oninput="ignore_enter"
-                      name="change_password" value="Appliquer"
-                      onclick=<?=onclick_pwd?>/>
+                      name="change_password" value="Appliquer"/>
           </form>
        </td>
      </tr>
@@ -635,7 +641,7 @@ let manage_courses _id req =
 
     {html|
      <tr><td>Nom:</td><td>
-       <form id=<?=form_name?>>
+       <form id=<?=form_name?> method="Post">
          <input type="hidden" name="courseid" value=<?=scourseid?>/>
          <input type="text"   name="name" value=<?=name?> onchange=<?=onchange_name?>/>
        </form></td>
@@ -651,7 +657,7 @@ let manage_courses _id req =
 let creation_classe () =
   onglet ~visible:false "Ajout d'une classe"
   {html|
-      <form name="creation_classe" method="Post"
+      <form name="creation_classe"
             onsubmit="return do_creation_classe();"
             action="javascript:void(0);">
        <table class="fill">
@@ -686,7 +692,7 @@ let creation_classe () =
 let creation_course () =
   onglet ~visible:false "Ajout d'un cours"
   {html|
-      <form name="creation_course" method="Post"
+      <form name="creation_course"
             onsubmit="return do_creation_course();"
             action="javascript:void(0);">
        <table class="fill">
@@ -719,7 +725,7 @@ let prof_courses userid req =
 
     in
     {html|
-      <form name=<?=form_name?> style="display: inline;">
+      <form name=<?=form_name?> style="display: inline;" method="Post">
        <input type="hidden" name="courseid" value=<?=string_of_int courseid?>/>
        <input type="hidden" name="userid" value=<?=string_of_int userid?>/>
        <span class="cl-item"><label for="is_in"><?=name?></label>
@@ -794,7 +800,7 @@ let exo_courses id exoid req =
     in
     {html|
      <div class="cl-item">
-     <form name=<?=form_name?>>
+     <form name=<?=form_name?> method="Post">
        <input type="hidden" name="courseid" value=<?=(string_of_int courseid)?>/>
        <input type="hidden" name="exoid" value=<?=(exoid)?>/>
          <label for="is_in"><?=cname?></label><?=checked?>
@@ -858,7 +864,7 @@ let manage_exos id req =
     let form_name = "ename" ^ "_" ^ exoid in
     let onchange = "change_exo_name('"^form_name^"');" in
     {html|<tr><td>
-            <form name=<?=form_name?>>
+            <form name=<?=form_name?> method="Post">
               <input type="hidden" name="exoid" value=<?=exoid?>/>
               <input type="text" name="name" value=<?=name?>
                      onchange=<?=onchange?>/>
@@ -872,7 +878,7 @@ let manage_exos id req =
               <td><a href=<?=cipynb_url?> download=<?=fname^".ipynb"?>>corrigé notebook</a></td></tr><tr>
               <td><a href=<?=tpy_url?> download=<?=fname^".py"?>>python test</a></td>
               <td><a href=<?=tpl_url?> download=<?=fname^".tpy"?>>template</a></td><td colspan=2>
-              <form name=<?=visibility_form_name?>>
+              <form name=<?=visibility_form_name?> method="Post">
                 <?=html1?>
                 <label for="hidden">caché</label>
                 <input type="hidden" name="exoid" value=<?=exoid?>/>
@@ -917,7 +923,7 @@ let show_notes login ?debut ?fin ?classid ?detailid profid exoid exoname req =
     in
     let fin_val = match fin with
       | None -> ""
-      | Some d -> "&debut=" ^ d
+      | Some d -> "&fin=" ^ d
     in
     let classe_val = match classid with
       | None -> ""
@@ -953,9 +959,7 @@ let show_notes login ?debut ?fin ?classid ?detailid profid exoid exoname req =
     let details = match detailid with
       | Some id when id = userid ->
          let details = Db.get_notes_detail ?debut ?fin profid userid exoid req in
-         Simple_httpd.Log.(f (Exc 0) (fun k -> k "Nb details: %d" (List.length details)));
          let hn (result, time) =
-           Simple_httpd.Log.(f (Exc 0) (fun k -> k "doing details"));
            let (l, u) = exo_html userid result time in
            {html|<tr><td></td><td></td>
                        <td></td>
@@ -964,9 +968,7 @@ let show_notes login ?debut ?fin ?classid ?detailid profid exoid exoname req =
          String.concat " " (List.map hn details)
       | _ -> {html||html}
     in
-    Simple_httpd.Log.(f (Exc 0) (fun k -> k "done details: %s" details));
     line ^ " " ^ details
-
   in
   let notes = List.map fn notes in
   let headers = "Classe" :: "Nom" :: "Prénom" :: "Date/Time" ::  !headers @ ["Link"] in
@@ -1058,7 +1060,11 @@ let exos_student userid req =
     in
     onglet ~visible:false name (String.concat " " (List.map fn exos))
   in
-  {html|<h3>Exercices disponibles</h3><?= String.concat " " (List.map gn courses)?>|html}
+  {html|
+    <h3>Exercices disponibles</h3>
+    <p class="attention">ATTENTION: les notes sont indicatives, les tests automatiques peuvent être insuffisants pour détecter certaines erreurs et ils ne prennent pas en compte la qualité du code ou la présence de vos propres tests.</p>
+    <?= String.concat " " (List.map gn courses)?>
+   |html}
 
 
 let show_solution login userid exoid req =
@@ -1067,6 +1073,7 @@ let show_solution login userid exoid req =
   let (latest,lt) = Db.latest_solution userid exoid req in
   let html = {html|<?= header login?>
     <h3><?=name?></h3>
+    <p class="attention">ATTENTION: les notes sont indicatives, les tests automatiques peuvent être insuffisants pour détecter certaines erreurs et ils ne prennent pas en compte la qualité du code ou la présence de vos propres tests.</p>
     <div class="center"><table class="table">
     <tr><th>Meilleure</th><th>Dernière</th></tr>
     <tr><td><?=bt?></td><td><?=lt?></td></tr>

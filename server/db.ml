@@ -31,34 +31,6 @@ end)
 
 open Simple_httpd
 
-let db_key = Session.new_key ()
-
-let create_connection req =
-  let conn =
-    match Simple_httpd_caqti.connect db_config with
-    | Ok conn -> conn
-    | Error err -> raise (Caqti_error.Exn err)
-  in
-  let mutex = Mutex.create () in
-  let res = (mutex, conn) in
-  Gc.finalise (fun (mutex, (conn : Simple_httpd_caqti.connection)) ->
-      let module C : Simple_httpd_caqti.CONNECTION = (val conn) in
-      (try C.disconnect () with _ -> ());
-      Mutex.delete mutex) res;
-  (match Session.get_session req with
-    | None -> ()
-    | Some session ->
-       Session.set_session_data session db_key res);
-  res
-
-let get_connection req =
-  match Session.get_session req with
-  | None -> create_connection req
-  | Some session ->
-     match Session.get_session_data session db_key with
-     | None -> create_connection req
-     | Some r -> r
-
 let raise_error res =
   match res with
   | Ok x -> x
@@ -239,40 +211,15 @@ let rec do_with_db2 ?(retry=3) fn =
   with _ when retry > 0 -> do_with_db2 ~retry:(retry - 1) fn
 
 let rec do_with_db ?(retry=3) fn req =
-  Log.(f (Req 0)) (fun k -> k "DB: Start request");
-  let mutex, conn = get_connection req in
-  let cl = Request.client req in
-  Mutex.lock mutex;
   try
-    let res =
-      if Simple_httpd.Client.connected cl then
-        begin
-          let res = fn (conn : Simple_httpd_caqti.connection) in
-          Log.(f (Req 0)) (fun k -> k "DB: Endrequest");
-          res
-        end
-      else
-        begin
-          Log.(f (Req 0)) (fun k -> k "DB: Client disconnected while waiting for mutex");
-          raise Exit
-        end
-    in
-    Mutex.unlock mutex;
-    res
+    Simple_httpd_caqti.with_session ~db_config req (fun conn ->
+        let res = fn (conn : Simple_httpd_caqti.connection) in
+        res)
   with
-  | Exit ->
-     Mutex.unlock mutex;
-     failwith "DB: Client disconnected while waiting for mutex"
   | exn when retry > 0 ->
      Log.(f (Req 0)) (fun k -> k "Retry db because of %s" (Printexc.to_string exn));
-     (try Mutex.unlock mutex with _ -> ());
-     let module C : Simple_httpd_caqti.CONNECTION = (val conn) in
-     (try C.disconnect () with _ -> ());
-     (try Mutex.delete mutex with _ -> ());
-     let _ = create_connection req in
      do_with_db ~retry:(retry - 1) fn req
   | exn ->
-     Mutex.unlock mutex;
      Log.(f (Req 0)) (fun k -> k "Exception in DB request %s" (Printexc.to_string exn));
      raise exn
 
@@ -324,7 +271,7 @@ let all_classes () =
       let query =
         [%rapper get_many
             {sql|SELECT @string{name}, @int{classid}
-             FROM classes|sql}]
+             FROM classes ORDER BY name|sql}]
       in
       raise_error @@ query () db)
 
@@ -333,7 +280,7 @@ let all_courses () =
       let query =
         [%rapper get_many
             {sql|SELECT @string{name}, @int{courseid}
-             FROM courses|sql}]
+             FROM courses ORDER BY name|sql}]
       in
       raise_error @@ query () db)
 
@@ -379,7 +326,8 @@ let all_classes_user userid =
              FROM classes as c
              LEFT JOIN user_classes as u
              ON u.classid = c.classid AND u.userid = %int{userid}
-             GROUP BY c.classid, c.name|sql}]
+             GROUP BY c.classid, c.name
+             ORDER BY c.name|sql}]
       in
       query ~userid db >> List.map (fun (n,i,c) -> (n,i,c>0)))
 
@@ -391,7 +339,8 @@ let all_classes_course courseid =
              FROM classes as c
              LEFT JOIN courses_classes as u
              ON u.classid = c.classid AND u.courseid = %int{courseid}
-             GROUP BY c.classid, c.name|sql}]
+             GROUP BY c.classid, c.name
+             ORDER BY c.name|sql}]
       in
       query ~courseid db >> List.map (fun (n,i,c) -> (n,i,c>0)))
 
@@ -403,7 +352,8 @@ let all_courses_prof userid =
              FROM courses as c
              LEFT JOIN prof_courses as u
              ON u.courseid = c.courseid AND u.userid = %int{userid}
-             GROUP BY c.courseid, c.name|sql}]
+             GROUP BY c.courseid, c.name
+             ORDER BY c.name|sql}]
       in
       query ~userid db >> List.map (fun (n,i,c) -> (n,i,c>0)))
 
@@ -414,7 +364,8 @@ let all_courses_student userid =
             {sql|SELECT @string{c.name}, @int{c.courseid}, @int{COUNT(u.userid)}
              FROM courses as c, courses_classes as cc, user_classes as u
              WHERE cc.courseid = c.courseid AND cc.classid = u.classid AND u.userid = %int{userid}
-             GROUP BY c.courseid, c.name|sql}]
+             GROUP BY c.courseid, c.name
+             ORDER BY c.name|sql}]
       in
       query ~userid db >> List.map (fun (n,i,c) -> (n,i,c>0)))
 
@@ -915,7 +866,8 @@ let change_user_firstname query =
 let change_user_password query =
   do_with_db (fun db ->
       let userid = int_of_string (List.assoc "userid" query) in
-      let password = Digest.(to_hex (string (List.assoc "password" query))) in
+      let password1 = List.assoc "password1" query in
+      let password = Digest.(to_hex (string password1)) in
       let query =
         [%rapper execute
             {sql|UPDATE users SET password = %string{password} WHERE userid=%int{userid} |sql}]
