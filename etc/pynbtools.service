@@ -1,0 +1,16 @@
+[Unit]
+Description=Pynbtools
+After=network.target
+
+[Service]
+User=pynbtools
+Group=pynbtools
+StandardOutput=file:/var/log/pynbtools/pynbtools.out
+StandardError=file:/var/log/pynbtools/pynbtools.err
+Type=simple
+Restart=always
+ExecStart=/usr/local/bin/pynbeval_server -P 10042 -z -36000 -p pynbtools -s /pynbtools/ -j /basthon?from= -i python-eval
+
+[Install]
+WantedBy=multi-user.target
+
